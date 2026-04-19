@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ | ระบบจองห้องวิศวกรรมศาสตร์</title>
+    <style>
+        /* ตั้งค่า Body ด้วย CSS Grid ให้อยู่กึ่งกลางหน้าจอ */
+        body {
+            margin: 0;
+            height: 100vh;
+            display: grid;
+            place-items: center; /* จัดกึ่งกลางทั้งแนวตั้งและแนวนอน */
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* ฟอร์ม Login ใช้ CSS Grid จัดเรียงเนื้อหาภายใน */
+        .login-card {
+            display: grid;
+            gap: 20px;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .login-header {
+            text-align: center;
+        }
+
+        .login-header h2 {
+            margin: 0;
+            color: #C0392B; /* ใช้สีโทนแดงมหาวิทยาลัย */
+        }
+
+        .input-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        input {
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 12px;
+            background-color: #C0392B;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #922B21;
+        }
+
+        .error-msg {
+            color: #C0392B;
+            font-size: 14px;
+            text-align: center;
+            background: #FADBD8;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="login-header">
+            <h2>TU Room Booking</h2>
+            <p>กรุณาเข้าสู่ระบบด้วยบัญชี TU</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="error-msg">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="POST" style="display: grid; gap: 20px;">
+            {% csrf_token %}
+            <div class="input-group">
+                <label for="username">ชื่อผู้ใช้งาน (Username)</label>
+                <input type="text" id="username" name="username" placeholder="u66xxxxxxx" required>
+            </div>
+            
+            <div class="input-group">
+                <label for="password">รหัสผ่าน (Password)</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">เข้าสู่ระบบ</button>
+        </form>
+    </div>
+
+</body>
+</html>
