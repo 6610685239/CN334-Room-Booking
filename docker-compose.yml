@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=tu_booking_db
+      - POSTGRES_USER=tu_admin
+      - POSTGRES_PASSWORD=password123 
+    ports:
+      - "5432:5432"
+
+  web:
+    build: .
+    command: python src/manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_NAME=tu_booking_db
+      - DB_USER=tu_admin
+      - DB_PASSWORD=password123
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
