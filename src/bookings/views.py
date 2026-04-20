@@ -3,13 +3,16 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login
 from django.conf import settings
 from django.contrib import messages
-from .models import User
+from .models import User, Room, Booking
+from django.contrib.auth.decorators import login_required
+from django.utils.dateparse import parse_datetime
+from django.core.exceptions import ValidationError
 
 
 def tu_login_view(request):
     # ถ้า User ล็อกอินอยู่แล้ว ให้เด้งไปหน้า Dashboard เลย
     if request.user.is_authenticated:
-        return redirect("dashboard")
+        return redirect("book")
 
     if request.method == "POST":
         username = request.POST.get("username")
@@ -46,7 +49,7 @@ def tu_login_view(request):
                     request, user, backend="django.contrib.auth.backends.ModelBackend"
                 )
 
-                return redirect("dashboard")
+                return redirect("book")
             else:
                 messages.error(request, "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง")
 
@@ -57,6 +60,43 @@ def tu_login_view(request):
             return render(request, "bookings/login.html")
 
 
-# สร้าง View ปลอมๆ ไว้รองรับตอน Login เสร็จ
-def dashboard_view(request):
-    return render(request, "bookings/dashboard.html")
+@login_required  # บังคับว่าต้อง Login ก่อนถึงจะเข้าหน้านี้ได้
+def create_booking_view(request):
+    rooms = Room.objects.all()  # ดึงข้อมูลห้องทั้งหมดมาทำ Dropdown
+
+    if request.method == "POST":
+        room_id = request.POST.get("room")
+        purpose = request.POST.get("purpose")
+        start_time_str = request.POST.get("start_time")
+        end_time_str = request.POST.get("end_time")
+
+        try:
+            room = Room.objects.get(room_id=room_id)
+
+            # สร้างตัวแปรจำลองขึ้นมาก่อน (ยังไม่เซฟลงฐานข้อมูล)
+            booking = Booking(
+                user=request.user,
+                room=room,
+                purpose=purpose,
+                start_time=parse_datetime(start_time_str),
+                end_time=parse_datetime(end_time_str),
+                status="Pending",  # ให้สถานะเริ่มต้นเป็นรออนุมัติเสมอ
+            )
+
+            # สั่งให้มันเช็คกฎในฟังก์ชัน clean() ก่อน ถ้าผ่านถึงจะเซฟ
+            booking.full_clean()
+            booking.save()
+
+            messages.success(request, "ส่งคำขอจองห้องสำเร็จ กรุณารอการอนุมัติจาก Admin")
+            return redirect("dashboard")
+
+        except ValidationError as e:
+            # ถ้าติด Conflict หรือเวลาผิด มันจะเด้งมาที่นี่
+            for message in e.messages:
+                messages.error(request, message)
+        except Room.DoesNotExist:
+            messages.error(request, "ไม่พบห้องที่ต้องการจอง")
+        except Exception as e:
+            messages.error(request, "รูปแบบวันที่/เวลาไม่ถูกต้อง กรุณาลองใหม่")
+
+    return render(request, "bookings/booking_form.html", {"rooms": rooms})

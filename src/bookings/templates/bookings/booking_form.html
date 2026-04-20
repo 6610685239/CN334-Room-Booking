@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จองห้อง | ระบบจองห้องวิศวกรรมศาสตร์</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        /* Container หลักใช้ Grid แบ่งส่วนหัวและส่วนเนื้อหา */
+        .page-container {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #C0392B;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        main {
+            display: grid;
+            place-items: center;
+            padding: 20px;
+        }
+
+        /* ฟอร์มใช้ Grid ในการจัดการ Layout ภายใน */
+        .booking-card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            width: 100%;
+            max-width: 600px;
+            display: grid;
+            gap: 20px;
+        }
+
+        .booking-card h3 {
+            margin: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* แบ่งเป็น 2 คอลัมน์ */
+            gap: 15px;
+        }
+
+        /* สำหรับฟิลด์ที่ต้องการให้เต็มแถว */
+        .full-width {
+            grid-column: span 2;
+        }
+
+        .input-group {
+            display: grid;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: bold;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        input, select, textarea {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .btn-submit {
+            background-color: #27AE60;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:hover {
+            background-color: #219150;
+        }
+
+        .messages {
+            grid-column: span 2;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .error { color: #C0392B; background: #FADBD8; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
+        .success { color: #1E8449; background: #D5F5E3; padding: 10px; border-radius: 5px; }
+
+        /* ปรับปรุงหน้าตาเมื่อเป็นมือถือ */
+        @media (max-width: 500px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-container">
+    <header>
+        <h1>Engineering Room Booking</h1>
+    </header>
+
+    <main>
+        <div class="booking-card">
+            <h3>กรอกรายละเอียดการจอง</h3>
+
+            {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <form method="POST" class="form-grid">
+                {% csrf_token %}
+                
+                <div class="input-group full-width">
+                    <label>เลือกห้อง</label>
+                    <select name="room" required>
+                        <option value="">-- กรุณาเลือกห้อง --</option>
+                        {% for room in rooms %}
+                        <option value="{{ room.room_id }}">{{ room.name }} ({{ room.room_id }}) - {{ room.capacity }} ที่นั่ง</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="input-group full-width">
+                    <label>วัตถุประสงค์การจอง</label>
+                    <input type="text" name="purpose" placeholder="เช่น ประชุมโปรเจคกลุ่ม" required>
+                </div>
+
+                <div class="input-group">
+                    <label>วันที่และเวลาเริ่ม</label>
+                    <input type="datetime-local" name="start_time" required>
+                </div>
+
+                <div class="input-group">
+                    <label>วันที่และเวลาสิ้นสุด</label>
+                    <input type="datetime-local" name="end_time" required>
+                </div>
+
+                <button type="submit" class="btn-submit full-width">ยืนยันการส่งคำขอจอง</button>
+                
+            </form>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 
 class User(AbstractUser):
@@ -71,9 +72,31 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        # Validation พื้นฐาน: เวลาเริ่มต้องมาก่อนเวลาจบ
-        if self.start_time and self.end_time and self.start_time >= self.end_time:
-            raise ValidationError("เวลาสิ้นสุดการจองต้องอยู่หลังเวลาเริ่มต้น")
+        # 1. เช็คว่าเวลาเริ่มต้องมาก่อนเวลาจบ
+        if self.start_time and self.end_time:
+            if self.start_time >= self.end_time:
+                raise ValidationError("เวลาสิ้นสุดการจองต้องอยู่หลังเวลาเริ่มต้น")
+
+            # 2. Conflict Detection Logic (เช็คการจองซ้อน)
+            conflicts = Booking.objects.filter(
+                room=self.room,
+                status__in=[
+                    "Pending",
+                    "Approved",
+                ],  # ดึงเฉพาะคิวที่รออนุมัติหรืออนุมัติแล้ว (คิวที่ยกเลิกไม่นับ)
+                start_time__lt=self.end_time,  # ตรรกะเช็คเวลาชน
+                end_time__gt=self.start_time,
+            )
+
+            # ถ้าเป็นการแก้ไขการจองเดิมที่มีอยู่แล้ว ต้องไม่เอาตัวเองมาเช็คซ้ำ
+            if self.pk:
+                conflicts = conflicts.exclude(pk=self.pk)
+
+            # ถ้าเจอว่ามีข้อมูลใน conflicts แปลว่ามีคนจองเวลานี้ไปแล้ว
+            if conflicts.exists():
+                raise ValidationError(
+                    f"ห้อง {self.room.name} มีการจองในช่วงเวลาดังกล่าวแล้ว (Conflict Detected)"
+                )
 
     def __str__(self):
         return f"{self.room.room_id} | {self.user.username} | {self.start_time.strftime('%Y-%m-%d %H:%M')}"
