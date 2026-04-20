@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ | ระบบจองห้องวิศวกรรมศาสตร์</title>
     <style>
-        /* ตั้งค่า Body ด้วย CSS Grid ให้อยู่กึ่งกลางหน้าจอ */
+
         body {
             margin: 0;
             height: 100vh;
             display: grid;
-            place-items: center; /* จัดกึ่งกลางทั้งแนวตั้งและแนวนอน */
+            place-items: center;
             background-color: #f4f6f9;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* ฟอร์ม Login ใช้ CSS Grid จัดเรียงเนื้อหาภายใน */
         .login-card {
             display: grid;
             gap: 20px;
@@ -92,7 +91,7 @@
             {% csrf_token %}
             <div class="input-group">
                 <label for="username">ชื่อผู้ใช้งาน (Username)</label>
-                <input type="text" id="username" name="username" placeholder="u66xxxxxxx" required>
+                <input type="text" id="username" name="username" required>
             </div>
             
             <div class="input-group">

@@ -5,10 +5,6 @@ from django.db.models import Q
 
 
 class User(AbstractUser):
-    """
-    Custom User Model สำหรับระบบจองห้อง (อ้างอิง FR-AUTH-05)
-    ใช้ TU REST API ในการ Verify แล้วค่อยมาสร้าง/อัปเดต User ในระบบนี้
-    """
 
     ROLE_CHOICES = [
         ("Lecturer", "อาจารย์"),
@@ -21,9 +17,6 @@ class User(AbstractUser):
 
 
 class Room(models.Model):
-    """
-    ข้อมูลห้องประชุมและห้องเรียน (อ้างอิงหัวข้อ 2.3)
-    """
 
     ROOM_TYPE_CHOICES = [
         ("Meeting", "ห้องประชุม"),
@@ -42,9 +35,6 @@ class Room(models.Model):
 
 
 class Booking(models.Model):
-    """
-    ข้อมูลการจองห้อง (อ้างอิงหัวข้อ 3.2 และ 3.3)
-    """
 
     STATUS_CHOICES = [
         ("Pending", "รออนุมัติ"),
@@ -62,7 +52,6 @@ class Booking(models.Model):
 
     status = models.CharField(max_length=15, choices=STATUS_CHOICES, default="Pending")
 
-    # สำหรับการจองแบบประจำ (FR-BOOK-09 Recurring)
     is_recurring = models.BooleanField(default=False)
     recurring_pattern = models.CharField(
         max_length=50, blank=True, null=True, help_text="เช่น weekly, daily"
@@ -72,27 +61,23 @@ class Booking(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        # 1. เช็คว่าเวลาเริ่มต้องมาก่อนเวลาจบ
         if self.start_time and self.end_time:
             if self.start_time >= self.end_time:
                 raise ValidationError("เวลาสิ้นสุดการจองต้องอยู่หลังเวลาเริ่มต้น")
 
-            # 2. Conflict Detection Logic (เช็คการจองซ้อน)
             conflicts = Booking.objects.filter(
                 room=self.room,
                 status__in=[
                     "Pending",
                     "Approved",
-                ],  # ดึงเฉพาะคิวที่รออนุมัติหรืออนุมัติแล้ว (คิวที่ยกเลิกไม่นับ)
-                start_time__lt=self.end_time,  # ตรรกะเช็คเวลาชน
+                ],
+                start_time__lt=self.end_time,
                 end_time__gt=self.start_time,
             )
 
-            # ถ้าเป็นการแก้ไขการจองเดิมที่มีอยู่แล้ว ต้องไม่เอาตัวเองมาเช็คซ้ำ
             if self.pk:
                 conflicts = conflicts.exclude(pk=self.pk)
 
-            # ถ้าเจอว่ามีข้อมูลใน conflicts แปลว่ามีคนจองเวลานี้ไปแล้ว
             if conflicts.exists():
                 raise ValidationError(
                     f"ห้อง {self.room.name} มีการจองในช่วงเวลาดังกล่าวแล้ว (Conflict Detected)"
