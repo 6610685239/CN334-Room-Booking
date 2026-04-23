@@ -2,6 +2,7 @@ import requests
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.conf import settings
+from django.core.mail import send_mail
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_datetime
@@ -83,6 +84,27 @@ def create_booking_view(request):
 
             booking.full_clean()
             booking.save()
+
+            subject = f"มีการขอจองห้องใหม่: ห้อง {room.room_id}"
+            message = (
+                f"ผู้ใช้งาน {request.user.username} ได้ขอจองห้อง {room.room_id}\n"
+                f'วันที่: {booking.start_time.strftime("%d/%m/%Y %H:%M")} ถึง {booking.end_time.strftime("%H:%M")}\n'
+                f"กรุณาตรวจสอบและดำเนินการในระบบ"
+            )
+
+            admin_emails = User.objects.filter(role="Admin").values_list(
+                "email", flat=True
+            )
+            admin_emails = [email for email in admin_emails if email]
+
+            if admin_emails:
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    admin_emails,
+                    fail_silently=True,
+                )
 
             messages.success(request, "ส่งคำขอจองห้องสำเร็จ! กรุณารอการอนุมัติ")
             return redirect("book_room")
