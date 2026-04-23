@@ -3,5 +3,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("", include("bookings.urls")),  # ส่ง Request ทั้งหมดไปที่ bookings
+    path("", include("bookings.urls")),
+    path("dashboard/", include("dashboard.urls")),
 ]

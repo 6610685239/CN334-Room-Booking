@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard | ระบบจองห้อง</title>
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        .booking-card {
+            display: grid;
+            grid-template-columns: 100px 1fr 180px 150px;
+            gap: 15px;
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        .btn-approve { background: #27ae60; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; font-size: 12px; }
+        .btn-reject { background: #e74c3c; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-grid">
+        <aside style="background: #2c3e50; color: white; padding: 20px;">
+            <h3>Admin Panel</h3>
+            <p>ผู้ใช้งาน: {{ user.first_name }}</p>
+            <a href="{% url 'logout' %}" style="color: #ecf0f1;">ออกจากระบบ</a>
+        </aside>
+
+        <main style="padding: 20px;">
+            <h2>รายการรออนุมัติ (Pending)</h2>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="padding: 10px; background: #d4edda; margin-bottom: 10px;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="list-container">
+                {% for booking in bookings %}
+                <div class="booking-card">
+                    <div style="font-weight: bold;">{{ booking.room.room_id }}</div>
+                    <div>
+                        <strong>{{ booking.get_purpose_type_display }}</strong><br>
+                        {% if booking.purpose_type == 'Teaching' %}
+                            <small>{{ booking.course_code }}: {{ booking.course_name }}</small>
+                        {% else %}
+                            <small>{{ booking.training_topic }}</small>
+                        {% endif %}
+                    </div>
+                    <div style="font-size: 12px;">
+                        {{ booking.start_time|date:"d M H:i" }} - {{ booking.end_time|date:"H:i" }}
+                    </div>
+                    <div class="btn-group">
+                        <a href="{% url 'approve_booking' booking.id %}" class="btn-approve">อนุมัติ</a>
+                        <a href="{% url 'reject_booking' booking.id %}" class="btn-reject">ปฏิเสธ</a>
+                    </div>
+                </div>
+                {% empty %}
+                <p>ไม่มีรายการที่รอการอนุมัติในขณะนี้</p>
+                {% endfor %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>
