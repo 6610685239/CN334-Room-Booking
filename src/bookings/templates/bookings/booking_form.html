@@ -174,29 +174,72 @@
                     <select name="room" required>
                         <option value="">-- กรุณาเลือกห้อง --</option>
                         {% for room in rooms %}
-                        <option value="{{ room.room_id }}">{{ room.name }} ({{ room.room_id }}) - {{ room.capacity }} ที่นั่ง</option>
+                        <option value="{{ room.room_id }}">{{ room.name }} ({{ room.room_id }})</option>
                         {% endfor %}
                     </select>
                 </div>
 
                 <div class="input-group full-width">
-                    <label>วัตถุประสงค์การจอง</label>
-                    <input type="text" name="purpose" placeholder="เช่น ประชุมโปรเจคกลุ่ม" required>
+                    <label>วัตถุประสงค์การใช้งาน</label>
+                    <select name="purpose_type" id="purpose_type" onchange="toggleFields()" required>
+                        <option value="Teaching">สอนปกติ/ชดเชย/เสริม</option>
+                        <option value="Training">จัดอบรม/จัดติว</option>
+                    </select>
+                </div>
+
+                <div id="teaching_fields" class="form-grid full-width" style="margin:0; padding:0; gap:15px;">
+                    <div class="input-group">
+                        <label>รหัสวิชา</label>
+                        <input type="text" name="course_code" id="course_code" placeholder="เช่น CN334">
+                    </div>
+                    <div class="input-group">
+                        <label>ชื่อวิชา</label>
+                        <input type="text" name="course_name" id="course_name" placeholder="Software Engineering">
+                    </div>
+                    <div class="input-group full-width">
+                        <label>หลักสูตร</label>
+                        <select name="program" id="program">
+                            <option value="">-- เลือกหลักสูตร --</option>
+                            <option value="Bachelor">ปริญญาตรีภาคปกติ</option>
+                            <option value="Master">ปริญญาโท</option>
+                            <option value="TEP_TEPE">TEP-TEPE</option>
+                            <option value="TU_PINE">TU-PINE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="training_fields" class="input-group full-width" style="display:none;">
+                    <label>ชื่อเรื่องจัดอบรม/ติว</label>
+                    <input type="text" name="training_topic" id="training_topic" placeholder="เช่น ติวเข้มก่อนสอบมิดเทอม">
                 </div>
 
                 <div class="input-group">
                     <label>วันที่และเวลาเริ่ม</label>
                     <input type="datetime-local" name="start_time" required>
                 </div>
-
                 <div class="input-group">
                     <label>วันที่และเวลาสิ้นสุด</label>
                     <input type="datetime-local" name="end_time" required>
                 </div>
 
-                <button type="submit" class="btn-submit full-width">ยืนยันการส่งคำขอจอง</button>
-                
+                <button type="submit" class="btn-submit full-width">ยืนยันการขอจองห้อง</button>
             </form>
+            <script>
+                function toggleFields() {
+                    const purpose = document.getElementById("purpose_type").value;
+                    const teachingFields = document.getElementById("teaching_fields");
+                    const trainingFields = document.getElementById("training_fields");
+
+                    if (purpose === "Teaching") {
+                        teachingFields.style.display = "grid";
+                        trainingFields.style.display = "none";
+                    } else {
+                        teachingFields.style.display = "none";
+                        trainingFields.style.display = "grid";
+                    }
+                }
+                window.onload = toggleFields;
+            </script>
         </div>
     </main>
 </div>

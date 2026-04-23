@@ -65,26 +65,26 @@ def create_booking_view(request):
     rooms = Room.objects.all()
 
     if request.method == "POST":
-        room_id = request.POST.get("room")
-        purpose = request.POST.get("purpose")
-        start_time_str = request.POST.get("start_time")
-        end_time_str = request.POST.get("end_time")
-
         try:
-            room = Room.objects.get(room_id=room_id)
+            room = Room.objects.get(room_id=request.POST.get("room"))
+
             booking = Booking(
                 user=request.user,
                 room=room,
-                purpose=purpose,
-                start_time=parse_datetime(start_time_str),
-                end_time=parse_datetime(end_time_str),
+                purpose_type=request.POST.get("purpose_type"),
+                course_code=request.POST.get("course_code"),
+                course_name=request.POST.get("course_name"),
+                program=request.POST.get("program"),
+                training_topic=request.POST.get("training_topic"),
+                start_time=parse_datetime(request.POST.get("start_time")),
+                end_time=parse_datetime(request.POST.get("end_time")),
                 status="Pending",
             )
 
             booking.full_clean()
             booking.save()
 
-            messages.success(request, "ส่งคำขอจองห้องสำเร็จ กรุณารอการอนุมัติจาก Admin")
+            messages.success(request, "ส่งคำขอจองห้องสำเร็จ! กรุณารอการอนุมัติ")
             return redirect("book_room")
 
         except ValidationError as e:
@@ -93,6 +93,6 @@ def create_booking_view(request):
         except Room.DoesNotExist:
             messages.error(request, "ไม่พบห้องที่ต้องการจอง")
         except Exception as e:
-            messages.error(request, "รูปแบบวันที่/เวลาไม่ถูกต้อง กรุณาลองใหม่")
+            messages.error(request, "เกิดข้อผิดพลาด หรือรูปแบบวันที่ไม่ถูกต้อง")
 
     return render(request, "bookings/booking_form.html", {"rooms": rooms})

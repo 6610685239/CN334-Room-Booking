@@ -35,42 +35,57 @@ class Room(models.Model):
 
 
 class Booking(models.Model):
-
-    STATUS_CHOICES = [
-        ("Pending", "รออนุมัติ"),
-        ("Approved", "อนุมัติแล้ว"),
-        ("Rejected", "ไม่อนุมัติ"),
-        ("Cancelled", "ยกเลิกการจอง"),
+    PURPOSE_CHOICES = [
+        ("Teaching", "สอนปกติ/ชดเชย/เสริม"),
+        ("Training", "จัดอบรม/จัดติว"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bookings")
-    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name="bookings")
-    purpose = models.CharField(max_length=255, help_text="หัวข้อ/วัตถุประสงค์การจอง")
+    PROGRAM_CHOICES = [
+        ("Bachelor", "ปริญญาตรีภาคปกติ"),
+        ("Master", "ปริญญาโท"),
+        ("TEP_TEPE", "TEP-TEPE"),
+        ("TU_PINE", "TU-PINE"),
+    ]
 
-    start_time = models.DateTimeField(help_text="เวลาเริ่มใช้งาน")
-    end_time = models.DateTimeField(help_text="เวลาสิ้นสุดการใช้งาน")
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE)
 
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default="Pending")
-
-    is_recurring = models.BooleanField(default=False)
-    recurring_pattern = models.CharField(
-        max_length=50, blank=True, null=True, help_text="เช่น weekly, daily"
+    purpose_type = models.CharField(
+        max_length=20, choices=PURPOSE_CHOICES, default="Teaching"
     )
 
+    course_code = models.CharField(max_length=20, blank=True, null=True)
+    course_name = models.CharField(max_length=100, blank=True, null=True)
+    program = models.CharField(
+        max_length=20, choices=PROGRAM_CHOICES, blank=True, null=True
+    )
+
+    training_topic = models.CharField(max_length=200, blank=True, null=True)
+
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    status = models.CharField(max_length=20, default="Pending")
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def clean(self):
-        if self.start_time and self.end_time:
-            if self.start_time >= self.end_time:
-                raise ValidationError("เวลาสิ้นสุดการจองต้องอยู่หลังเวลาเริ่มต้น")
+        super().clean()
 
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise ValidationError("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น")
+
+        if self.purpose_type == "Teaching":
+            if not self.course_code or not self.course_name or not self.program:
+                raise ValidationError(
+                    "สำหรับการสอน: กรุณาระบุรหัสวิชา ชื่อวิชา และหลักสูตรให้ครบถ้วน"
+                )
+        elif self.purpose_type == "Training":
+            if not self.training_topic:
+                raise ValidationError("สำหรับการจัดอบรม/ติว: กรุณาระบุชื่อเรื่อง")
+
+        if self.start_time and self.end_time and self.room:
             conflicts = Booking.objects.filter(
                 room=self.room,
-                status__in=[
-                    "Pending",
-                    "Approved",
-                ],
+                status__in=["Pending", "Approved"],
                 start_time__lt=self.end_time,
                 end_time__gt=self.start_time,
             )
@@ -80,8 +95,8 @@ class Booking(models.Model):
 
             if conflicts.exists():
                 raise ValidationError(
-                    f"ห้อง {self.room.name} มีการจองในช่วงเวลาดังกล่าวแล้ว (Conflict Detected)"
+                    f"ห้อง {self.room.name} ถูกจองแล้วในช่วงเวลาดังกล่าว กรุณาเลือกเวลาอื่น"
                 )
 
     def __str__(self):
-        return f"{self.room.room_id} | {self.user.username} | {self.start_time.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.room.room_id} - {self.user.username}"
