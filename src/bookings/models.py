@@ -29,6 +29,7 @@ class Room(models.Model):
     name = models.CharField(max_length=100, help_text="ชื่อห้อง")
     room_type = models.CharField(max_length=20, choices=ROOM_TYPE_CHOICES)
     capacity = models.IntegerField(help_text="จำนวนที่นั่ง")
+    is_active = models.BooleanField(default=True, verbose_name="เปิดใช้งาน")
 
     def __str__(self):
         return f"{self.room_id} - {self.name} ({self.capacity} ที่นั่ง)"
