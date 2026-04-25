@@ -15,4 +15,5 @@ urlpatterns = [
         {"new_status": "Rejected"},
         name="reject_booking",
     ),
+    path("cancel/<int:booking_id>/", views.cancel_booking, name="cancel_booking"),
 ]
