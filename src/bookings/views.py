@@ -68,11 +68,11 @@ def logout_view(request):
 
 @login_required
 def create_booking_view(request):
-    rooms = Room.objects.all()
+    rooms = Room.objects.filter(is_active=True)
 
     if request.method == "POST":
         try:
-            room = Room.objects.get(room_id=request.POST.get("room"))
+            room = Room.objects.get(room_id=request.POST.get("room"), is_active=True)
 
             booking = Booking(
                 user=request.user,
@@ -126,7 +126,7 @@ def create_booking_view(request):
             for message in e.messages:
                 messages.error(request, message)
         except Room.DoesNotExist:
-            messages.error(request, "ไม่พบห้องที่ต้องการจอง")
+            messages.error(request, "ห้องนี้ปิดใช้งานหรือไม่พร้อมสำหรับการจอง")
         except Exception as e:
             messages.error(request, "เกิดข้อผิดพลาด หรือรูปแบบวันที่ไม่ถูกต้อง")
 
