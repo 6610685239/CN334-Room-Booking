@@ -16,4 +16,6 @@ urlpatterns = [
         name="reject_booking",
     ),
     path("cancel/<int:booking_id>/", views.cancel_booking, name="cancel_booking"),
+    path("rooms/", views.manage_rooms, name="manage_rooms"),
+    path("rooms/save/", views.save_room, name="save_room"),
 ]

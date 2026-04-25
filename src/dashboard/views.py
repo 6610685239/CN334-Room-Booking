@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from bookings.models import Booking, User
+from bookings.models import Booking, User, Room
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
@@ -96,3 +96,51 @@ def cancel_booking(request, booking_id):
         messages.error(request, "ไม่พบรายการจอง หรือคุณไม่มีสิทธิ์ยกเลิกรายการนี้")
 
     return redirect("dashboard")
+
+
+@login_required
+def manage_rooms(request):
+    if request.user.role != "Admin":
+        messages.error(request, "คุณไม่มีสิทธิ์เข้าถึงหน้านี้")
+        return redirect("dashboard")
+
+    rooms = Room.objects.all().order_by("room_id")
+    return render(request, "dashboard/manage_rooms.html", {"rooms": rooms})
+
+
+@login_required
+def save_room(request):
+    if request.user.role != "Admin" or request.method != "POST":
+        return redirect("dashboard")
+
+    original_room_id = request.POST.get("original_room_id")
+    room_id = request.POST.get("room_id")
+    name = request.POST.get("name")
+    room_type = request.POST.get("room_type")
+    capacity = request.POST.get("capacity")
+    is_active = request.POST.get("is_active") == "on"
+
+    try:
+        if original_room_id:
+            room = Room.objects.get(room_id=original_room_id)
+            room.room_id = room_id
+            room.name = name
+            room.room_type = room_type
+            room.capacity = capacity
+            room.is_active = is_active
+            room.save()
+            messages.success(request, f"อัปเดตข้อมูลห้อง {room_id} เรียบร้อยแล้ว")
+        else:
+            Room.objects.create(
+                room_id=room_id,
+                name=name,
+                room_type=room_type,
+                capacity=capacity,
+                is_active=is_active,
+            )
+            messages.success(request, f"เพิ่มห้อง {room_id} เข้าสู่ระบบแล้ว")
+
+    except Exception as e:
+        messages.error(request, f"เกิดข้อผิดพลาด: {str(e)}")
+
+    return redirect("manage_rooms")
