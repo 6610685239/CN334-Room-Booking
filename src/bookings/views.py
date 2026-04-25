@@ -32,13 +32,18 @@ def tu_login_view(request):
             if response.status_code == 200 and result.get("status") == True:
                 api_username = result.get("username")
                 display_name = result.get("displayname_th", "")
+                api_email = result.get("email")
 
                 user, created = User.objects.get_or_create(username=api_username)
 
+                user.first_name = display_name
+                if api_email:
+                    user.email = api_email
+
                 if created:
                     user.role = "Lecturer"
-                    user.first_name = display_name
-                    user.save()
+
+                user.save()
 
                 login(
                     request, user, backend="django.contrib.auth.backends.ModelBackend"
@@ -95,7 +100,7 @@ def create_booking_view(request):
             admin_emails = User.objects.filter(role="Admin").values_list(
                 "email", flat=True
             )
-            admin_emails = [email for email in admin_emails if email]
+            admin_emails = [e for e in admin_emails if e]
 
             if admin_emails:
                 subject = f"[แจ้งเตือน] คำขอจองห้องใหม่: {booking.room.room_id}"
