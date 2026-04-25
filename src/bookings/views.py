@@ -98,6 +98,14 @@ def create_booking_view(request):
             admin_emails = [email for email in admin_emails if email]
 
             if admin_emails:
+                subject = f"[แจ้งเตือน] คำขอจองห้องใหม่: {booking.room.room_id}"
+                message = (
+                    f"อาจารย์ {request.user.first_name or request.user.username} ได้ส่งคำขอจองห้อง\n"
+                    f"ห้อง: {booking.room.room_id}\n"
+                    f'วันที่: {booking.start_time.strftime("%d/%m/%Y %H:%M")} เป็นต้นไป\n\n'
+                    f'กรุณาตรวจสอบที่ระบบ Dashboard: {request.build_absolute_uri("/dashboard/")}'
+                )
+
                 send_mail(
                     subject,
                     message,
