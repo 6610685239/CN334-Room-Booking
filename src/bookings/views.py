@@ -175,7 +175,6 @@ def api_get_booked_slots(request):
         return JsonResponse({"booked_slots": booked_slots})
 
     except Exception as e:
-        # ถ้าพัง จะพ่น Error สีแดงออกไปที่หน้า Terminal ของ Docker ให้เราเห็นทันที
         print(f"CRITICAL ERROR in api_get_booked_slots: {e}")
         return JsonResponse({"error": str(e)}, status=500)
 
