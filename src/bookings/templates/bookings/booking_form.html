@@ -139,6 +139,44 @@
                 text-align: center;
             }
         }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-slot {
+            padding: 10px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            user-select: none;
+        }
+
+        .time-slot:hover:not(.disabled) {
+            background-color: #e2e6ea;
+        }
+
+        .time-slot.selected {
+            background-color: #C0392B;
+            color: white;
+            border-color: #C0392B;
+            font-weight: bold;
+        }
+
+        .time-slot.disabled {
+            background-color: #e9ecef;
+            color: #adb5bd;
+            cursor: not-allowed;
+            border-color: #e9ecef;
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
@@ -150,6 +188,7 @@
         <h1>Engineering Room Booking</h1>
         <div class="user-menu">
             <span>สวัสดี, {{ user.first_name|default:user.username }}</span>
+            <a href="{% url 'calendar' %}">📅 ดูปฏิทินห้องว่าง</a>
             <a href="{% url 'logout' %}" class="btn-logout">ออกจากระบบ</a>
         </div>
     </header>
@@ -171,7 +210,7 @@
                 
                 <div class="input-group full-width">
                     <label>เลือกห้อง</label>
-                    <select name="room" required>
+                    <select name="room" id="roomSelect" required onchange="fetchTimeSlots()">
                         <option value="">-- กรุณาเลือกห้อง --</option>
                         {% for room in rooms %}
                         <option value="{{ room.room_id }}">{{ room.name }} ({{ room.room_id }})</option>
@@ -213,14 +252,20 @@
                     <input type="text" name="training_topic" id="training_topic" placeholder="เช่น ติวเข้มก่อนสอบมิดเทอม">
                 </div>
 
-                <div class="input-group">
-                    <label>วันที่และเวลาเริ่ม</label>
-                    <input type="datetime-local" name="start_time" required>
+                <div class="input-group full-width">
+                    <label>วันที่ต้องการใช้งาน</label>
+                    <input type="date" id="booking_date" required onchange="fetchTimeSlots()">
                 </div>
-                <div class="input-group">
-                    <label>วันที่และเวลาสิ้นสุด</label>
-                    <input type="datetime-local" name="end_time" required>
+
+                <div class="input-group full-width">
+                    <label>เลือกช่วงเวลา (สามารถคลิกหลายปุ่มต่อเนื่องกันได้)</label>
+                    <div id="time-slots-container" class="time-slots-grid">
+                        <p style="color: #666; font-size: 0.9em; grid-column: 1 / -1;">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>
+                    </div>
                 </div>
+
+                <input type="hidden" name="start_time" id="hidden_start_time" required>
+                <input type="hidden" name="end_time" id="hidden_end_time" required>
 
                 <button type="submit" class="btn-submit full-width">ยืนยันการขอจองห้อง</button>
             </form>
@@ -243,6 +288,154 @@
         </div>
     </main>
 </div>
+<script>
+    const allSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+    let selectedSlots = [];
 
+    async function fetchTimeSlots(autoSelectStart = null, autoSelectEnd = null) {
+    const roomId = document.getElementById('roomSelect').value;
+    const dateVal = document.getElementById('booking_date').value;
+    const container = document.getElementById('time-slots-container');
+    
+    selectedSlots = [];
+    updateHiddenInputs();
+
+    if (!roomId || !dateVal) {
+        container.innerHTML = '<p style="color: #666; font-size: 0.9em; grid-column: 1 / -1;">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>';
+        return;
+    }
+
+    container.innerHTML = '<p style="color: #666; grid-column: 1 / -1;">กำลังตรวจสอบคิวว่าง...</p>';
+
+    try {
+        const response = await fetch(`/api/booked-slots/?room_id=${roomId}&date=${dateVal}`);
+        const data = await response.json();
+        renderSlots(data.booked_slots);
+
+        if (autoSelectStart && autoSelectEnd) {
+            const startTime = autoSelectStart.split('T')[1].substring(0, 5); // ดึงเฉพาะ hh:mm
+            const endTime = autoSelectEnd.split('T')[1].substring(0, 5);
+            
+            const slots = document.querySelectorAll('.time-slot:not(.disabled)');
+            slots.forEach(slot => {
+                const slotStart = slot.dataset.start;
+                if (slotStart >= startTime && slotStart < endTime) {
+                    toggleSlot(slot);
+                }
+            });
+        }
+    } catch (error) {
+        container.innerHTML = '<p style="color: red; grid-column: 1 / -1;">เกิดข้อผิดพลาดในการดึงข้อมูล</p>';
+    }
+}
+
+    function renderSlots(bookedSlots) {
+        const container = document.getElementById('time-slots-container');
+        container.innerHTML = '';
+
+        allSlots.forEach(time => {
+            const h = parseInt(time.split(':')[0]);
+            const nextTime = `${(h + 1).toString().padStart(2, '0')}:00`;
+            
+            const btn = document.createElement('div');
+            btn.className = 'time-slot';
+            btn.dataset.start = time;
+            btn.dataset.end = nextTime;
+            btn.innerText = `${time} - ${nextTime}`;
+
+            const isBooked = bookedSlots.some(b => time >= b.start && time < b.end);
+
+            if (isBooked) {
+                btn.classList.add('disabled');
+            } else {
+                btn.onclick = () => toggleSlot(btn);
+            }
+
+            container.appendChild(btn);
+        });
+    }
+
+    function toggleSlot(btn) {
+        if (btn.classList.contains('disabled')) return;
+        
+        const time = btn.dataset.start;
+
+        if (btn.classList.contains('selected')) {
+            btn.classList.remove('selected');
+            selectedSlots = selectedSlots.filter(t => t !== time);
+        } else {
+            btn.classList.add('selected');
+            selectedSlots.push(time);
+        }
+
+        selectedSlots.sort();
+
+        let isContiguous = true;
+        for (let i = 0; i < selectedSlots.length - 1; i++) {
+            let currentH = parseInt(selectedSlots[i].split(':')[0]);
+            let nextH = parseInt(selectedSlots[i+1].split(':')[0]);
+            if (nextH - currentH !== 1) {
+                isContiguous = false;
+                break;
+            }
+        }
+
+        if (!isContiguous) {
+            alert('กรุณาเลือกช่วงเวลาที่ต่อเนื่องกันครับ หากต้องการจองแยกช่วง ให้แยกทำรายการครับ');
+            btn.classList.remove('selected');
+            selectedSlots = selectedSlots.filter(t => t !== time);
+        } else {
+            updateHiddenInputs();
+        }
+    }
+
+    function updateHiddenInputs() {
+        const dateVal = document.getElementById('booking_date').value;
+        const startInput = document.getElementById('hidden_start_time');
+        const endInput = document.getElementById('hidden_end_time');
+
+        if (selectedSlots.length > 0 && dateVal) {
+            const firstSlot = document.querySelector(`.time-slot[data-start="${selectedSlots[0]}"]`);
+            const lastSlot = document.querySelector(`.time-slot[data-start="${selectedSlots[selectedSlots.length - 1]}"]`);
+
+            startInput.value = `${dateVal}T${firstSlot.dataset.start}:00`;
+            endInput.value = `${dateVal}T${lastSlot.dataset.end}:00`;
+        } else {
+            startInput.value = '';
+            endInput.value = '';
+        }
+    }
+
+    function getUrlParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+        room: params.get('room'),
+        date: params.get('date'),
+        start: params.get('start'),
+        end: params.get('end')
+    };
+}
+
+    document.addEventListener("DOMContentLoaded", function() {
+    const params = getUrlParams();
+    
+    if (params.room) {
+        document.getElementById('roomSelect').value = params.room;
+
+        if (params.date) {
+            document.getElementById('booking_date').value = params.date;
+            fetchTimeSlots();
+        } 
+        else if (params.start && params.end) {
+            const startDate = params.start.split('T')[0];
+            document.getElementById('booking_date').value = startDate;
+            fetchTimeSlots(params.start, params.end);
+        }
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("booking_date").setAttribute('min', today);
+    });
+</script>
 </body>
 </html>
