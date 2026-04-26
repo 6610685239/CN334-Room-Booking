@@ -182,22 +182,30 @@ def api_get_booked_slots(request):
 def api_get_bookings(request):
     room_id = request.GET.get("room_id")
 
-    bookings = Booking.objects.exclude(status__in=["Cancelled", "Rejected"])
+    bookings = Booking.objects.filter(status__in=["Pending", "Approved"])
 
     if room_id:
         bookings = bookings.filter(room__room_id=room_id)
 
     events = []
     for b in bookings:
-        color = "#f39c12" if b.status == "Pending" else "#27ae60"
+        event_color = "#f39c12" if b.status == "Pending" else "#27ae60"
+
+        title = f"[{b.room.room_id}] "
+        if b.purpose_type == "Teaching":
+            title += f"สอน: {b.course_code}"
+        else:
+            title += f"อบรม: {b.training_topic[:15]}..."
 
         events.append(
             {
                 "id": b.id,
-                "title": f"จองแล้ว ({b.status})",
-                "start": localtime(b.start_time).isoformat(),
-                "end": localtime(b.end_time).isoformat(),
-                "color": color,
+                "title": title,
+                "start": localtime(b.start_time).strftime("%Y-%m-%dT%H:%M:%S"),
+                "end": localtime(b.end_time).strftime("%Y-%m-%dT%H:%M:%S"),
+                "color": event_color,
+                "description": b.get_purpose_type_display(),
+                "extendedProps": {"status": b.status, "room_name": b.room.name},
             }
         )
 

@@ -47,6 +47,9 @@
                 center: 'title',
                 right: 'dayGridMonth,timeGridWeek,timeGridDay'
             },
+
+            displayEventTime: false,
+
             slotMinTime: '08:00:00', 
             slotMaxTime: '20:00:00', 
 
@@ -58,6 +61,13 @@
             selectMirror: true,
 
             events: '/api/bookings/', 
+
+            eventClick: function(info) {
+                alert('รายละเอียดการจอง:\n' + 
+                    'ห้อง: ' + info.event.extendedProps.room_name + '\n' +
+                    'สถานะ: ' + info.event.extendedProps.status)
+                    ;
+            },
 
             select: function(info) {
                 var selectedRoom = roomSelector.value;
@@ -76,6 +86,7 @@
                     window.location.href = `/book/?room=${selectedRoom}&start=${startStr}&end=${endStr}`;
                 }
             }
+
         });
 
         calendar.render();
