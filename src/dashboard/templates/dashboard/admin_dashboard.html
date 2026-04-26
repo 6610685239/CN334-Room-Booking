@@ -4,77 +4,117 @@
     <meta charset="UTF-8">
     <title>Admin Dashboard | ระบบจองห้อง</title>
     <style>
-        .dashboard-grid {
+        body { margin: 0; font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; }
+        .admin-container {
             display: grid;
-            grid-template-columns: 250px 1fr;
+            grid-template-columns: 260px 1fr;
             min-height: 100vh;
         }
 
-        .booking-card {
-            display: grid;
-            grid-template-columns: 100px 1fr 180px 150px;
-            gap: 15px;
-            background: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        aside { background: #2c3e50; color: white; padding: 25px; }
+        aside h2 { font-size: 1.2rem; margin-bottom: 30px; color: #ecf0f1; }
+        aside a { color: #bdc3c7; display: block; padding: 12px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 5px; }
+        aside a:hover, aside a.active { background: #34495e; color: white; font-weight: bold; }
 
-        .btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-        }
+        main { padding: 40px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
-        .btn-approve { background: #27ae60; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; font-size: 12px; }
-        .btn-reject { background: #e74c3c; color: white; border: none; padding: 5px; border-radius: 4px; cursor: pointer; text-decoration: none; text-align: center; font-size: 12px; }
+        .content-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #7f8c8d; font-weight: 600; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-pending { background: #fff3cd; color: #856404; }
+
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.85rem; transition: 0.2s; }
+        .btn-approve { background: #27ae60; color: white; margin-right: 5px; }
+        .btn-approve:hover { background: #219150; }
+        .btn-reject { background: #C0392B; color: white; }
+        .btn-reject:hover { background: #a93226; }
+        
+        .user-info { color: #7f8c8d; font-size: 0.9rem; }
     </style>
 </head>
 <body>
-<div class="dashboard-grid">
+
+<div class="admin-container">
     <aside>
-        <h2>Admin Panel</h2>
-        <hr>
-        <a href="{% url 'dashboard' %}">รายการจอง (Pending)</a>
-        <a href="{% url 'manage_rooms' %}">จัดการข้อมูลห้อง</a>
+        <h2>จัดการระบบจองห้อง</h2>
+        <a href="{% url 'dashboard' %}" class="active">🏠 รายการจองที่รออนุมัติ</a>
+        <a href="{% url 'manage_rooms' %}">🏢 จัดการข้อมูลห้อง</a>
+        <a href="{% url 'calendar' %}">📅 ดูปฏิทินรวม</a>
+        <a href="{% url 'book_room' %}">➕ จองห้อง</a>
+        <a href="{% url 'logout' %}" style="margin-top: 40px; color: #e74c3c;">🚪 ออกจากระบบ</a>
     </aside>
 
-    <main style="padding: 20px;">
-        <h2>รายการรออนุมัติ (Pending)</h2>
+    <main>
+        <div class="header-flex">
+            <div>
+                <h1>รายการจองที่รอการอนุมัติ</h1>
+                <p class="user-info">สวัสดีครับ คุณแอดมิน {{ user.first_name }}</p>
+            </div>
+        </div>
 
         {% if messages %}
-        {% for message in messages %}
-        <div style="padding: 10px; background: #d4edda; margin-bottom: 10px;">{{ message }}</div>
-        {% endfor %}
+            {% for message in messages %}
+                <div style="padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:20px; border: 1px solid #c3e6cb;">
+                    {{ message }}
+                </div>
+            {% endfor %}
         {% endif %}
 
-        <div class="list-container">
-            {% for booking in bookings %}
-            <div class="booking-card">
-                <div style="font-weight: bold;">{{ booking.room.room_id }}</div>
-                <div>
-                    <strong>{{ booking.get_purpose_type_display }}</strong><br>
-                    {% if booking.purpose_type == 'Teaching' %}
-                    <small>{{ booking.course_code }}: {{ booking.course_name }}</small>
-                    {% else %}
-                    <small>{{ booking.training_topic }}</small>
-                    {% endif %}
-                </div>
-                <div style="font-size: 12px;">
-                    {{ booking.start_time|date:"d M H:i" }} - {{ booking.end_time|date:"H:i" }}
-                </div>
-                <div class="btn-group">
-                    <a href="{% url 'approve_booking' booking.id %}" class="btn-approve">อนุมัติ</a>
-                    <a href="{% url 'reject_booking' booking.id %}" class="btn-reject">ปฏิเสธ</a>
-                </div>
-            </div>
-            {% empty %}
-            <p>ไม่มีรายการที่รอการอนุมัติในขณะนี้</p>
-            {% endfor %}
+        <div class="content-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ผู้ขอจอง</th>
+                        <th>ห้อง</th>
+                        <th>วัน/เวลา</th>
+                        <th>วัตถุประสงค์</th>
+                        <th>สถานะ</th>
+                        <th>การดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>
+                            <strong>{{ booking.user.first_name }}</strong><br>
+                            <span style="font-size: 0.8rem; color: #999;">{{ booking.user.email }}</span>
+                        </td>
+                        <td><span style="font-weight: bold; color: #2c3e50;">{{ booking.room.room_id }}</span></td>
+                        <td>
+                            {{ booking.start_time|date:"d/m/Y" }}<br>
+                            <span style="font-size: 0.9rem;">{{ booking.start_time|date:"H:i" }} - {{ booking.end_time|date:"H:i" }}</span>
+                        </td>
+                        <td>
+                            <span style="font-size: 0.9rem;">
+                                {% if booking.purpose_type == 'Teaching' %}
+                                    📚 สอน: {{ booking.course_code }}
+                                {% else %}
+                                    📝 อบรม: {{ booking.training_topic|truncatechars:20 }}
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td><span class="badge badge-pending">รออนุมัติ</span></td>
+                        <td>
+                            <a href="{% url 'approve_booking' booking.id %}" class="btn btn-approve" onclick="return confirm('ยืนยันการอนุมัติห้องนี้?');">อนุมัติ</a>
+                            <a href="{% url 'reject_booking' booking.id %}" class="btn btn-reject" onclick="return confirm('ยืนยันการปฏิเสธคำขอนี้?');">ปฏิเสธ</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 50px; color: #999;">
+                            🎉 ไม่มีรายการจองค้างในระบบในขณะนี้
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </main>
 </div>
+
 </body>
 </html>

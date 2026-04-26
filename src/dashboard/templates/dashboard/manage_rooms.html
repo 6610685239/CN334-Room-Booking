@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>จัดการข้อมูลห้อง | Admin Panel</title>
+    <style>
+        body { margin: 0; font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; }
+        .admin-container {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            min-height: 100vh;
+        }
+
+        aside { background: #2c3e50; color: white; padding: 25px; }
+        aside h2 { font-size: 1.2rem; margin-bottom: 30px; color: #ecf0f1; }
+        aside a { color: #bdc3c7; display: block; padding: 12px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 5px; }
+        aside a:hover, aside a.active { background: #34495e; color: white; }
+
+        main { padding: 40px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+
+        .room-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #7f8c8d; font-weight: 600; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+
+        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.9rem; }
+        .btn-primary { background: #C0392B; color: white; }
+        .btn-edit { background: #f39c12; color: white; padding: 6px 12px; }
+
+        #roomModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 450px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="admin-container">
+    <aside>
+        <h2>จัดการระบบจองห้อง</h2>
+        <a href="{% url 'dashboard' %}">🏠 รายการจองที่รออนุมัติ</a>
+        <a href="{% url 'manage_rooms' %}" class="active">🏢 จัดการข้อมูลห้อง</a>
+        <a href="{% url 'calendar' %}">📅 ดูปฏิทินรวม</a>
+        <a href="{% url 'book_room' %}">➕ จองห้อง</a>
+        <a href="{% url 'logout' %}" style="margin-top: 40px; color: #e74c3c;">🚪 ออกจากระบบ</a>
+    </aside>
+
+    <main>
+        <div class="header-flex">
+            <h1>จัดการข้อมูลห้อง</h1>
+            <button class="btn btn-primary" onclick="showModal()">+ เพิ่มห้องใหม่</button>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div style="padding:15px; background:#d1ecf1; border-radius:5px; margin-bottom:20px;">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="room-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>รหัสห้อง</th>
+                        <th>ชื่อห้อง</th>
+                        <th>ประเภท</th>
+                        <th>ความจุ</th>
+                        <th>สถานะ</th>
+                        <th>จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in rooms %}
+                    <tr>
+                        <td><strong>{{ room.room_id }}</strong></td>
+                        <td>{{ room.name }}</td>
+                        <td>{{ room.room_type }}</td>
+                        <td>{{ room.capacity }} ที่นั่ง</td>
+                        <td>
+                            {% if room.is_active %}
+                                <span class="badge badge-active">เปิดใช้งาน</span>
+                            {% else %}
+                                <span class="badge badge-inactive">ปิดใช้งาน</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-edit" onclick="showModal('{{ room.room_id }}', '{{ room.name }}', '{{ room.room_type }}', '{{ room.capacity }}', '{{ room.is_active|yesno:'true,false' }}')">แก้ไข</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" style="text-align: center; color: #999;">ไม่พบข้อมูลห้องในระบบ</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+
+<div id="roomModal">
+    <div class="modal-content">
+        <h2 id="modalTitle">เพิ่มห้องใหม่</h2>
+        <form method="POST" action="{% url 'save_room' %}">
+            {% csrf_token %}
+            <input type="hidden" name="original_room_id" id="original_room_id">
+            
+            <div class="form-group">
+                <label>รหัสห้อง</label>
+                <input type="text" name="room_id" id="form_room_id" required placeholder="เช่น 406-3">
+            </div>
+            <div class="form-group">
+                <label>ชื่อห้อง</label>
+                <input type="text" name="name" id="form_name" required placeholder="เช่น ห้องประชุม 1">
+            </div>
+            <div class="form-group">
+                <label>ประเภทห้อง</label>
+                <select name="room_type" id="form_room_type">
+                    <option value="Meeting">ห้องประชุม</option>
+                    <option value="Classroom">ห้องบรรยาย</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>จำนวนที่นั่ง</label>
+                <input type="number" name="capacity" id="form_capacity" required>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="is_active" id="form_is_active" checked style="width: auto;">
+                <label for="form_is_active" style="margin: 0;">เปิดให้ใช้งานในระบบ</label>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">บันทึก</button>
+                <button type="button" class="btn" style="background: #ccc;" onclick="hideModal()">ยกเลิก</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showModal(id='', name='', type='Meeting', cap='', active='true') {
+        document.getElementById('roomModal').style.display = 'flex';
+        if (id) {
+            document.getElementById('modalTitle').innerText = 'แก้ไขข้อมูลห้อง ' + id;
+            document.getElementById('original_room_id').value = id;
+            document.getElementById('form_room_id').value = id;
+            document.getElementById('form_name').value = name;
+            document.getElementById('form_room_type').value = type;
+            document.getElementById('form_capacity').value = cap;
+            document.getElementById('form_is_active').checked = (active === 'true');
+        } else {
+            document.getElementById('modalTitle').innerText = 'เพิ่มห้องใหม่';
+            document.getElementById('original_room_id').value = '';
+            document.getElementById('form_room_id').value = '';
+            document.getElementById('form_name').value = '';
+            document.getElementById('form_room_type').value = 'Meeting';
+            document.getElementById('form_capacity').value = '';
+            document.getElementById('form_is_active').checked = true;
+        }
+    }
+
+    function hideModal() {
+        document.getElementById('roomModal').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
