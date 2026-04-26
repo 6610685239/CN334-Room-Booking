@@ -188,6 +188,7 @@
         <h1>Engineering Room Booking</h1>
         <div class="user-menu">
             <span>สวัสดี, {{ user.first_name|default:user.username }}</span>
+            <a href="{% url 'dashboard' %}">Dashboard</a>
             <a href="{% url 'calendar' %}">📅 ดูปฏิทินห้องว่าง</a>
             <a href="{% url 'logout' %}" class="btn-logout">ออกจากระบบ</a>
         </div>
