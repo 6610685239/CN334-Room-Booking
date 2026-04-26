@@ -5,9 +5,11 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_datetime, parse_date
 from django.core.exceptions import ValidationError
 from .models import User, Room, Booking
+from django.http import JsonResponse
+from django.utils.timezone import localtime
 
 
 def tu_login_view(request):
@@ -130,4 +132,80 @@ def create_booking_view(request):
         except Exception as e:
             messages.error(request, "เกิดข้อผิดพลาด หรือรูปแบบวันที่ไม่ถูกต้อง")
 
-    return render(request, "bookings/booking_form.html", {"rooms": rooms})
+    initial_room = request.GET.get("room", "")
+    initial_start = request.GET.get("start", "")
+    initial_end = request.GET.get("end", "")
+
+    context = {
+        "rooms": rooms,
+        "initial_room": initial_room,
+        "initial_start": initial_start,
+        "initial_end": initial_end,
+    }
+
+    return render(request, "bookings/booking_form.html", context)
+
+
+@login_required
+def api_get_booked_slots(request):
+    room_id = request.GET.get("room_id")
+    date_str = request.GET.get("date")
+
+    if not room_id or not date_str:
+        return JsonResponse({"booked_slots": []})
+
+    try:
+        target_date = parse_date(date_str)
+
+        bookings = Booking.objects.filter(
+            room__room_id=room_id,
+            start_time__date=target_date,
+            status__in=["Pending", "Approved"],
+        )
+
+        booked_slots = []
+        for b in bookings:
+            booked_slots.append(
+                {
+                    "start": localtime(b.start_time).strftime("%H:%M"),
+                    "end": localtime(b.end_time).strftime("%H:%M"),
+                }
+            )
+
+        return JsonResponse({"booked_slots": booked_slots})
+
+    except Exception as e:
+        # ถ้าพัง จะพ่น Error สีแดงออกไปที่หน้า Terminal ของ Docker ให้เราเห็นทันที
+        print(f"CRITICAL ERROR in api_get_booked_slots: {e}")
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+def api_get_bookings(request):
+    room_id = request.GET.get("room_id")
+
+    bookings = Booking.objects.exclude(status__in=["Cancelled", "Rejected"])
+
+    if room_id:
+        bookings = bookings.filter(room__room_id=room_id)
+
+    events = []
+    for b in bookings:
+        color = "#f39c12" if b.status == "Pending" else "#27ae60"
+
+        events.append(
+            {
+                "id": b.id,
+                "title": f"จองแล้ว ({b.status})",
+                "start": localtime(b.start_time).isoformat(),
+                "end": localtime(b.end_time).isoformat(),
+                "color": color,
+            }
+        )
+
+    return JsonResponse(events, safe=False)
+
+
+@login_required
+def calendar_view(request):
+    rooms = Room.objects.filter(is_active=True)
+    return render(request, "bookings/calendar.html", {"rooms": rooms})
