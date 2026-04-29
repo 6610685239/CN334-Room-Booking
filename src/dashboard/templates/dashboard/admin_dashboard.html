@@ -1,120 +1,145 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard | ระบบจองห้อง</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
     <style>
-        body { margin: 0; font-family: 'Sarabun', sans-serif; background-color: #f4f7f6; }
-        .admin-container {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            min-height: 100vh;
-        }
-
-        aside { background: #2c3e50; color: white; padding: 25px; }
-        aside h2 { font-size: 1.2rem; margin-bottom: 30px; color: #ecf0f1; }
-        aside a { color: #bdc3c7; display: block; padding: 12px 15px; text-decoration: none; border-radius: 5px; margin-bottom: 5px; }
-        aside a:hover, aside a.active { background: #34495e; color: white; font-weight: bold; }
-
-        main { padding: 40px; }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-
-        .content-card { background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); overflow: hidden; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #7f8c8d; font-weight: 600; }
-
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
-        .badge-pending { background: #fff3cd; color: #856404; }
-
-        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; font-size: 0.85rem; transition: 0.2s; }
-        .btn-approve { background: #27ae60; color: white; margin-right: 5px; }
-        .btn-approve:hover { background: #219150; }
-        .btn-reject { background: #C0392B; color: white; }
-        .btn-reject:hover { background: #a93226; }
-        
-        .user-info { color: #7f8c8d; font-size: 0.9rem; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-sm); }
+        th { background: var(--gray-50); color: var(--gray-600); font-weight: var(--font-weight-semi); }
+        tr:hover td { background: var(--gray-50); }
     </style>
 </head>
 <body>
 
-<div class="admin-container">
-    <aside>
-        <h2>จัดการระบบจองห้อง</h2>
-        <a href="{% url 'dashboard' %}" class="active">🏠 รายการจองที่รออนุมัติ</a>
-        <a href="{% url 'manage_rooms' %}">🏢 จัดการข้อมูลห้อง</a>
-        <a href="{% url 'calendar' %}">📅 ดูปฏิทินรวม</a>
-        <a href="{% url 'book_room' %}">➕ จองห้อง</a>
-        <a href="{% url 'report_dashboard' %}">📊 รายงานสถิติ</a>
-        <a href="{% url 'logout' %}" style="margin-top: 40px; color: #e74c3c;">🚪 ออกจากระบบ</a>
-    </aside>
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
 
-    <main>
-        <div class="header-flex">
-            <div>
-                <h1>รายการจองที่รอการอนุมัติ</h1>
-                <p class="user-info">สวัสดีครับ คุณแอดมิน {{ user.first_name }}</p>
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
             </div>
         </div>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div style="padding:15px; background:#d4edda; color:#155724; border-radius:5px; margin-bottom:20px; border: 1px solid #c3e6cb;">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link active" aria-current="page">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
 
-        <div class="content-card">
-            <table>
-                <thead>
-                    <tr>
-                        <th>ผู้ขอจอง</th>
-                        <th>ห้อง</th>
-                        <th>วัน/เวลา</th>
-                        <th>วัตถุประสงค์</th>
-                        <th>สถานะ</th>
-                        <th>การดำเนินการ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for booking in bookings %}
-                    <tr>
-                        <td>
-                            <strong>{{ booking.user.first_name }}</strong><br>
-                            <span style="font-size: 0.8rem; color: #999;">{{ booking.user.email }}</span>
-                        </td>
-                        <td><span style="font-weight: bold; color: #2c3e50;">{{ booking.room.room_id }}</span></td>
-                        <td>
-                            {{ booking.start_time|date:"d/m/Y" }}<br>
-                            <span style="font-size: 0.9rem;">{{ booking.start_time|date:"H:i" }} - {{ booking.end_time|date:"H:i" }}</span>
-                        </td>
-                        <td>
-                            <span style="font-size: 0.9rem;">
-                                {% if booking.purpose_type == 'Teaching' %}
-                                    📚 สอน: {{ booking.course_code }}
-                                {% else %}
-                                    📝 อบรม: {{ booking.training_topic|truncatechars:20 }}
-                                {% endif %}
-                            </span>
-                        </td>
-                        <td><span class="badge badge-pending">รออนุมัติ</span></td>
-                        <td>
-                            <a href="{% url 'approve_booking' booking.id %}" class="btn btn-approve" onclick="return confirm('ยืนยันการอนุมัติห้องนี้?');">อนุมัติ</a>
-                            <a href="{% url 'reject_booking' booking.id %}" class="btn btn-reject" onclick="return confirm('ยืนยันการปฏิเสธคำขอนี้?');">ปฏิเสธ</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 50px; color: #999;">
-                            🎉 ไม่มีรายการจองค้างในระบบในขณะนี้
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="sidebar__section-label">จัดการระบบ</div>
+            <a href="{% url 'manage_rooms' %}" class="sidebar__link">
+                <span>&#127970;</span>
+                <span>จัดการห้อง</span>
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="sidebar__link">
+                <span>&#128202;</span>
+                <span>รายงาน</span>
+            </a>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>เจ้าหน้าที่</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
         </div>
-    </main>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="page-content">
+
+            <div class="page-header">
+                <div>
+                    <div class="page-header__title">รายการจองที่รอการอนุมัติ</div>
+                    <div class="page-header__subtitle">สวัสดีครับ คุณแอดมิน {{ user.first_name }}</div>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert--success">
+                        <span>&#10003;</span>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card card--compact">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ผู้ขอจอง</th>
+                            <th>ห้อง</th>
+                            <th>วัน/เวลา</th>
+                            <th>วัตถุประสงค์</th>
+                            <th>สถานะ</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>
+                                <strong>{{ booking.user.first_name }}</strong><br>
+                                <span class="text-muted text-xs">{{ booking.user.email }}</span>
+                            </td>
+                            <td><strong>{{ booking.room.room_id }}</strong></td>
+                            <td>
+                                {{ booking.start_time|date:"d/m/Y" }}<br>
+                                <span class="text-sm">{{ booking.start_time|date:"H:i" }} - {{ booking.end_time|date:"H:i" }}</span>
+                            </td>
+                            <td>
+                                <span class="text-sm">
+                                    {% if booking.purpose_type == 'Teaching' %}
+                                        &#128218; สอน: {{ booking.course_code }}
+                                    {% else %}
+                                        &#128221; อบรม: {{ booking.training_topic|truncatechars:20 }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td><span class="badge badge--pending">รออนุมัติ</span></td>
+                            <td>
+                                <a href="{% url 'approve_booking' booking.id %}" class="btn btn--success btn--sm" onclick="return confirm('ยืนยันการอนุมัติห้องนี้?');">อนุมัติ</a>
+                                <a href="{% url 'reject_booking' booking.id %}" class="btn btn--danger btn--sm" onclick="return confirm('ยืนยันการปฏิเสธคำขอนี้?');">ปฏิเสธ</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 50px; color: var(--gray-400);">
+                                &#127881; ไม่มีรายการจองค้างในระบบในขณะนี้
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 
 </body>

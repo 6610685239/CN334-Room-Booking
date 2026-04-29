@@ -9,14 +9,30 @@ from django.utils import timezone
 
 @login_required
 def dashboard_view(request):
+    now = timezone.now()
     if request.user.role == "Admin":
         bookings = Booking.objects.filter(status="Pending").order_by("start_time")
-        template = "dashboard/admin_dashboard.html"
+        return render(request, "dashboard/admin_dashboard.html", {
+            "bookings": bookings,
+            "now": now,
+        })
     else:
-        bookings = Booking.objects.filter(user=request.user).order_by("-created_at")
-        template = "dashboard/user_dashboard.html"
-
-    return render(request, template, {"bookings": bookings, "now": timezone.now()})
+        all_bookings = Booking.objects.filter(user=request.user)
+        pending_count  = all_bookings.filter(status="Pending").count()
+        approved_count = all_bookings.filter(status="Approved").count()
+        month_count    = all_bookings.filter(
+            start_time__year=now.year, start_time__month=now.month
+        ).count()
+        upcoming = all_bookings.filter(
+            start_time__gte=now
+        ).exclude(status__in=["Cancelled", "Rejected"]).order_by("start_time")[:5]
+        return render(request, "dashboard/user_dashboard.html", {
+            "now": now,
+            "pending_count":  pending_count,
+            "approved_count": approved_count,
+            "month_count":    month_count,
+            "upcoming":       upcoming,
+        })
 
 
 @login_required

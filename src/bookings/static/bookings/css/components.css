@@ -1,0 +1,485 @@
+/* ============================================================
+   COMPONENTS — Buttons, Forms, Tables, Cards, Modals (:target)
+   ============================================================ */
+
+@import url('variables.css');
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semi);
+  line-height: 1.5;
+  text-decoration: none;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  white-space: nowrap;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.btn--primary {
+  background-color: var(--tu-red);
+  color: #fff;
+  border-color: var(--tu-red);
+}
+.btn--primary:hover {
+  background-color: var(--tu-red-dark);
+  border-color: var(--tu-red-dark);
+  text-decoration: none;
+  color: #fff;
+}
+
+.btn--secondary {
+  background-color: #fff;
+  color: var(--tu-red);
+  border-color: var(--tu-red);
+}
+.btn--secondary:hover {
+  background-color: var(--tu-red-light);
+  text-decoration: none;
+  color: var(--tu-red-dark);
+}
+
+.btn--ghost {
+  background-color: transparent;
+  color: var(--gray-700);
+  border-color: var(--gray-300);
+}
+.btn--ghost:hover {
+  background-color: var(--gray-100);
+  text-decoration: none;
+  color: var(--gray-900);
+}
+
+.btn--danger {
+  background-color: var(--status-rejected-bg);
+  color: var(--tu-red-dark);
+  border-color: var(--status-rejected-border);
+}
+.btn--danger:hover {
+  background-color: var(--tu-red-light);
+  border-color: var(--tu-red);
+  text-decoration: none;
+}
+
+.btn--success {
+  background-color: var(--status-approved-bg);
+  color: #1D6A3A;
+  border-color: var(--status-approved-border);
+}
+.btn--success:hover {
+  background-color: #A9DFBF;
+  text-decoration: none;
+  color: #1D6A3A;
+}
+
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+}
+.btn--lg {
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-base);
+}
+.btn--full { width: 100%; }
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Form Elements ────────────────────────────────────────── */
+.form-group {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-heading);
+}
+.form-label--required::after {
+  content: ' *';
+  color: var(--tu-red);
+}
+.form-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.form-error {
+  font-size: var(--font-size-xs);
+  color: var(--tu-red);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.5;
+  color: var(--color-text-body);
+  background-color: #fff;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  appearance: none;
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--tu-red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.15);
+}
+.form-control::placeholder {
+  color: var(--gray-400);
+}
+.form-control:disabled {
+  background-color: var(--gray-100);
+  color: var(--gray-500);
+  cursor: not-allowed;
+}
+.form-control--error {
+  border-color: var(--tu-red);
+}
+
+/* Select with custom arrow */
+select.form-control {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236C757D' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  padding-right: var(--space-8);
+}
+
+/* Textarea */
+textarea.form-control {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* Checkbox & Radio */
+.form-check {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+.form-check__input {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--gray-400);
+  border-radius: var(--radius-sm);
+  background-color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  appearance: none;
+  transition: all var(--transition-fast);
+}
+.form-check__input[type="radio"] {
+  border-radius: var(--radius-full);
+}
+.form-check__input:checked {
+  background-color: var(--tu-red);
+  border-color: var(--tu-red);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpath fill='white' d='M1 4l3 3 5-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.form-check__input[type="radio"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6' viewBox='0 0 6 6'%3E%3Ccircle cx='3' cy='3' r='3' fill='white'/%3E%3C/svg%3E");
+}
+.form-check__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+  cursor: pointer;
+}
+
+/* ── Day-of-week selector (CSS-only checkbox buttons) ──── */
+/* Usage: hidden checkbox + label that looks like a toggle button */
+.day-selector {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-2);
+}
+.day-selector__input { display: none; }
+.day-selector__label {
+  display: grid;
+  place-items: center;
+  padding: var(--space-2) var(--space-1);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+.day-selector__label:hover {
+  border-color: var(--tu-red-muted);
+  color: var(--tu-red);
+  background-color: var(--tu-red-light);
+}
+.day-selector__input:checked + .day-selector__label {
+  background-color: var(--tu-red);
+  border-color: var(--tu-red);
+  color: #fff;
+}
+
+/* ── Purpose type toggle (radio button cards) ──────────── */
+.purpose-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.purpose-card__input { display: none; }
+.purpose-card__label {
+  display: grid;
+  grid-template-rows: auto auto;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 2px solid var(--gray-300);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    background-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  text-align: center;
+}
+.purpose-card__label:hover {
+  border-color: var(--tu-red-muted);
+  background-color: var(--tu-red-light);
+}
+.purpose-card__input:checked + .purpose-card__label {
+  border-color: var(--tu-red);
+  background-color: var(--tu-red-light);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.15);
+}
+.purpose-card__icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+.purpose-card__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+  line-height: var(--line-height-tight);
+}
+
+/* ── Room selection cards ──────────────────────────────── */
+.room-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+.room-card__input { display: none; }
+.room-card__label {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+  background-color: #fff;
+}
+.room-card__label:hover {
+  border-color: var(--tu-red-muted);
+  box-shadow: var(--shadow-md);
+}
+.room-card__input:checked + .room-card__label {
+  border-color: var(--tu-red);
+  box-shadow: 0 0 0 3px rgba(192,57,43,.15);
+}
+.room-card__name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+}
+.room-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.room-card__capacity {
+  font-size: var(--font-size-xs);
+  color: var(--gray-600);
+}
+
+/* ── CSS Grid table (replaces <table> for responsiveness) ── */
+.grid-table {
+  display: grid;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.grid-table__header,
+.grid-table__row {
+  display: contents;
+}
+.grid-table__header > *,
+.grid-table__row > * {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+.grid-table__header > * {
+  background-color: var(--gray-50);
+  font-weight: var(--font-weight-semi);
+  color: var(--gray-600);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.grid-table__row:last-child > * {
+  border-bottom: none;
+}
+.grid-table__row:hover > * {
+  background-color: var(--gray-50);
+}
+
+/* ── Stat card ──────────────────────────────────────────── */
+.stat-card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5) var(--space-6);
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: var(--space-1);
+  box-shadow: var(--shadow-sm);
+}
+.stat-card__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.stat-card__value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-heading);
+  line-height: var(--line-height-tight);
+}
+.stat-card__sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.stat-card--pending  .stat-card__value { color: var(--status-pending); }
+.stat-card--approved .stat-card__value { color: var(--status-approved); }
+.stat-card--rejected .stat-card__value { color: var(--status-rejected); }
+
+/* ── CSS-only Modal (via :target) ────────────────────────── */
+/*
+  Usage:
+    Trigger: <a href="#modal-reject-123">ปฏิเสธ</a>
+    Modal:   <div id="modal-reject-123" class="modal">...</div>
+    Close:   <a href="#" class="modal__backdrop">...</a>
+             <a href="#">ยกเลิก</a>
+*/
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+}
+.modal:target {
+  display: grid;
+  place-items: center;
+}
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0,0,0,.45);
+}
+.modal__box {
+  position: relative;
+  z-index: 301;
+  background-color: #fff;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-6);
+  width: min(480px, 90vw);
+  display: grid;
+  gap: var(--space-4);
+}
+.modal__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+}
+.modal__body {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-body);
+}
+.modal__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+/* ── Breadcrumb ──────────────────────────────────────────── */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-4);
+}
+.breadcrumb__sep { color: var(--gray-300); }
+.breadcrumb__current {
+  color: var(--color-text-body);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ── Empty state ─────────────────────────────────────────── */
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+.empty-state__icon {
+  font-size: 3rem;
+  opacity: .4;
+}
+.empty-state__text {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+.empty-state__sub {
+  font-size: var(--font-size-sm);
+}

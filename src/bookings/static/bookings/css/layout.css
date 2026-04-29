@@ -1,0 +1,346 @@
+/* ============================================================
+   LAYOUT — App shell CSS Grid, sidebar, topbar, main content
+   ============================================================ */
+
+@import url('variables.css');
+
+/* ── Hidden sidebar toggle checkbox ──────────────────────── */
+#sidebar-toggle { display: none; }
+
+/* ── App Shell: CSS Grid ──────────────────────────────────── */
+/*
+  Desktop:  [240px sidebar] [1fr main area]
+            The main area itself is a sub-grid:
+            [60px topbar]
+            [1fr  content]
+
+  Mobile:   Single column — sidebar becomes an overlay drawer
+*/
+
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────── */
+.sidebar {
+  grid-column: 1;
+  grid-row: 1;
+  background-color: var(--color-bg-sidebar);
+  display: grid;
+  grid-template-rows: var(--topbar-height) 1fr auto;
+  /* top logo area | nav scroll area | user footer */
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-sidebar);
+  z-index: 100;
+}
+
+/* Sidebar: top logo strip */
+.sidebar__header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  border-bottom: 1px solid rgba(255,255,255,.15);
+}
+.sidebar__logo {
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255,255,255,.2);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+.sidebar__title {
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semi);
+  line-height: var(--line-height-tight);
+}
+.sidebar__title small {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  opacity: .75;
+}
+
+/* Sidebar: scrollable nav area */
+.sidebar__nav {
+  overflow-y: auto;
+  padding: var(--space-4) 0;
+  scrollbar-width: none;
+}
+.sidebar__nav::-webkit-scrollbar { display: none; }
+
+.sidebar__section-label {
+  padding: var(--space-2) var(--space-4);
+  color: rgba(255,255,255,.55);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semi);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: var(--space-4);
+}
+.sidebar__section-label:first-child { margin-top: 0; }
+
+.sidebar__link {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: rgba(255,255,255,.85);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition: background-color var(--transition-fast);
+  border-left: 3px solid transparent;
+}
+.sidebar__link:hover {
+  background-color: rgba(255,255,255,.12);
+  color: #fff;
+  text-decoration: none;
+}
+.sidebar__link.active,
+.sidebar__link[aria-current="page"] {
+  background-color: var(--tu-red-dark);
+  color: #fff;
+  border-left-color: #fff;
+}
+
+/* Pending count badge in sidebar */
+.sidebar__badge {
+  background-color: rgba(255,255,255,.25);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-full);
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Sidebar: user footer */
+.sidebar__footer {
+  border-top: 1px solid rgba(255,255,255,.15);
+  padding: var(--space-4);
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+.sidebar__footer .sidebar__logout {
+  grid-column: 1 / -1;
+  width: 100%;
+  justify-content: center;
+  margin-top: var(--space-1);
+}
+.sidebar__avatar {
+  width: 36px;
+  height: 36px;
+  background-color: var(--tu-red-dark);
+  border-radius: var(--radius-full);
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+.sidebar__username {
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--line-height-tight);
+}
+.sidebar__username small {
+  display: block;
+  color: rgba(255,255,255,.6);
+  font-weight: var(--font-weight-normal);
+}
+.sidebar__logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  background-color: rgba(255,255,255,.18);
+  border: 1px solid rgba(255,255,255,.35);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semi);
+  font-family: var(--font-family);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+.sidebar__logout:hover {
+  background-color: rgba(255,255,255,.32);
+  border-color: rgba(255,255,255,.6);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* ── Main panel (right of sidebar) ───────────────────────── */
+.main-panel {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+}
+
+/* ── Mobile topbar (hidden on desktop) ───────────────────── */
+.topbar {
+  display: none; /* shown on mobile via media query */
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0 var(--space-4);
+  background-color: #fff;
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar__page-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Hamburger label (CSS-only toggle) */
+.topbar__hamburger {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--gray-700);
+}
+.topbar__hamburger:hover { background-color: var(--gray-100); }
+
+/* Desktop page header bar (inside main content, above page) */
+.page-header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+.page-header__title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-heading);
+  line-height: var(--line-height-tight);
+}
+.page-header__subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+}
+
+/* ── Page content area ───────────────────────────────────── */
+.page-content {
+  padding: var(--space-6);
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  width: 100%;
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+.card {
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-6);
+}
+.card--compact { padding: var(--space-4); }
+.card__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+  margin-bottom: var(--space-4);
+}
+.card__title--sm {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semi);
+  color: var(--color-text-heading);
+  margin-bottom: var(--space-3);
+}
+
+/* ── Mobile sidebar overlay (CSS-only) ───────────────────── */
+/* The sidebar becomes a fixed drawer on mobile.
+   Controlled by a hidden checkbox #sidebar-toggle.
+   The label (.topbar__hamburger) toggles it. */
+
+@media (max-width: 767px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: var(--sidebar-width);
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    z-index: 200;
+  }
+
+  /* When checkbox is checked, slide in sidebar */
+  #sidebar-toggle:checked ~ .app-shell .sidebar {
+    transform: translateX(0);
+  }
+
+  /* Overlay backdrop */
+  #sidebar-toggle:checked ~ .app-shell::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0,0,0,.4);
+    z-index: 190;
+  }
+
+  .main-panel {
+    grid-column: 1;
+    grid-template-rows: var(--topbar-height) 1fr;
+  }
+
+  .topbar {
+    display: grid;
+  }
+
+  .page-content {
+    padding: var(--space-4);
+  }
+}
+
+@media (min-width: 768px) {
+  /* On desktop, hide the hamburger label */
+  .topbar__hamburger { display: none; }
+}

@@ -1,366 +1,396 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จองห้อง | ระบบจองห้องวิศวกรรมศาสตร์</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Sarabun', sans-serif;
-            background-color: #f8f9fa;
-        }
-
-        .page-container {
-            display: grid;
-            grid-template-rows: auto 1fr;
-            min-height: 100vh;
-        }
-
-        header {
-            background-color: #C0392B;
-            color: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 1.5em;
-        }
-
-        main {
-            display: grid;
-            place-items: center;
-            padding: 20px;
-        }
-
-        .booking-card {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            width: 100%;
-            max-width: 600px;
-            display: grid;
-            gap: 20px;
-        }
-
-        .booking-card h3 {
-            margin: 0;
-            color: #333;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-        }
-
-        .user-menu {
-            font-size: 0.9em;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .btn-logout {
-            color: #FFD700;
-            text-decoration: none;
-            font-weight: bold;
-            border: 1px solid #FFD700;
-            padding: 6px 12px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-logout:hover {
-            background-color: #FFD700;
-            color: #C0392B;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; /* แบ่งเป็น 2 คอลัมน์ */
-            gap: 15px;
-        }
-
-        .full-width {
-            grid-column: span 2;
-        }
-
-        .input-group {
-            display: grid;
-            gap: 8px;
-        }
-
-        label {
-            font-weight: bold;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        input, select, textarea {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1em;
-        }
-
-        .btn-submit {
-            background-color: #27AE60;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 6px;
-            font-size: 1.1em;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn-submit:hover {
-            background-color: #219150;
-        }
-
-        .messages {
-            grid-column: span 2;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .error { color: #C0392B; background: #FADBD8; padding: 10px; border-radius: 5px; margin-bottom: 5px; }
-        .success { color: #1E8449; background: #D5F5E3; padding: 10px; border-radius: 5px; }
-
-        @media (max-width: 500px) {
-            header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
-            }
-        }
-
-        .time-slots-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .time-slot {
-            padding: 10px;
-            text-align: center;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9em;
-            user-select: none;
-        }
-
-        .time-slot:hover:not(.disabled) {
-            background-color: #e2e6ea;
-        }
-
-        .time-slot.selected {
-            background-color: #C0392B;
-            color: white;
-            border-color: #C0392B;
-            font-weight: bold;
-        }
-
-        .time-slot.disabled {
-            background-color: #e9ecef;
-            color: #adb5bd;
-            cursor: not-allowed;
-            border-color: #e9ecef;
-            text-decoration: line-through;
-        }
-    </style>
+    <title>จองห้อง | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
 </head>
 <body>
 
-<div class="page-container">
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
 
+<div class="app-shell">
 
-    <header>
-        <h1>Engineering Room Booking</h1>
-        <div class="user-menu">
-            <span>สวัสดี, {{ user.first_name|default:user.username }}</span>
-            <a href="{% url 'dashboard' %}">Dashboard</a>
-            <a href="{% url 'calendar' %}">📅 ดูปฏิทินห้องว่าง</a>
-            <a href="{% url 'logout' %}" class="btn-logout">ออกจากระบบ</a>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
+            </div>
         </div>
-    </header>
 
-    <main>
-        <div class="booking-card">
-            <h3>กรอกรายละเอียดการจอง</h3>
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link active" aria-current="page">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
+
+            {% if user.role == 'Admin' %}
+            <div class="sidebar__section-label">จัดการระบบ</div>
+            <a href="{% url 'manage_rooms' %}" class="sidebar__link">
+                <span>&#127970;</span>
+                <span>จัดการห้อง</span>
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="sidebar__link">
+                <span>&#128202;</span>
+                <span>รายงาน</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>{% if user.role == 'Admin' %}เจ้าหน้าที่{% elif user.role == 'Lecturer' %}อาจารย์{% else %}{{ user.role }}{% endif %}</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="page-content">
+
+            <div class="page-header">
+                <div>
+                    <div class="page-header__title">จองห้องประชุม</div>
+                    <div class="page-header__subtitle">เลือกห้อง &rarr; วัตถุประสงค์ &rarr; วันที่และเวลา</div>
+                </div>
+            </div>
 
             {% if messages %}
-            <ul class="messages">
                 {% for message in messages %}
-                <li class="{{ message.tags }}">{{ message }}</li>
+                    <div class="alert {% if message.tags == 'error' %}alert--error{% elif message.tags == 'success' %}alert--success{% else %}alert--warning{% endif %}">
+                        <span>&#9432;</span>
+                        <span>{{ message }}</span>
+                    </div>
                 {% endfor %}
-            </ul>
             {% endif %}
 
-            <form method="POST" class="form-grid">
+            <!-- Progress indicator -->
+            <div class="wizard-indicator">
+                <div class="wizard-step active" id="wi-1">
+                    <div class="wizard-step__bubble">1</div>
+                    <div class="wizard-step__label">เลือกห้อง</div>
+                </div>
+                <div class="wizard-connector" id="wc-1"></div>
+                <div class="wizard-step" id="wi-2">
+                    <div class="wizard-step__bubble">2</div>
+                    <div class="wizard-step__label">วัตถุประสงค์</div>
+                </div>
+                <div class="wizard-connector" id="wc-2"></div>
+                <div class="wizard-step" id="wi-3">
+                    <div class="wizard-step__bubble">3</div>
+                    <div class="wizard-step__label">วันที่และเวลา</div>
+                </div>
+            </div>
+
+            <form method="POST" id="bookingForm">
                 {% csrf_token %}
-                
-                <div class="input-group full-width">
-                    <label>เลือกห้อง</label>
-                    <select name="room" id="roomSelect" required onchange="fetchTimeSlots()">
-                        <option value="">-- กรุณาเลือกห้อง --</option>
-                        {% for room in rooms %}
-                        <option value="{{ room.room_id }}">{{ room.name }} ({{ room.room_id }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                <input type="hidden" name="room" id="selectedRoom">
+                <input type="hidden" name="start_time" id="hidden_start_time">
+                <input type="hidden" name="end_time" id="hidden_end_time">
 
-                <div class="input-group full-width">
-                    <label>วัตถุประสงค์การใช้งาน</label>
-                    <select name="purpose_type" id="purpose_type" onchange="toggleFields()" required>
-                        <option value="Teaching">สอนปกติ/ชดเชย/เสริม</option>
-                        <option value="Training">จัดอบรม/จัดติว</option>
-                    </select>
-                </div>
+                <!-- ==============================
+                     ขั้นตอนที่ 1: เลือกห้อง
+                ================================ -->
+                <div class="wizard-panel" id="panel-1">
+                    <div class="card">
+                        <div class="card__title">เลือกห้องที่ต้องการจอง</div>
+                        <div class="room-cards-grid">
+                            {% for room in rooms %}
+                            <div class="room-card" data-room-id="{{ room.room_id }}" onclick="selectRoom(this, '{{ room.room_id }}')">
+                                <div class="room-card__photo">
+                                    {% if room.room_id == '406-3' %}
+                                        <img src="{% static 'images/room406_3.jpg' %}" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% elif room.room_id == '406-5' %}
+                                        <img src="{% static 'images/room406_5.jpg' %}" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% elif room.room_id == '408-1' %}
+                                        <img src="{% static 'images/roomn408_1.jpg' %}" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% elif room.room_id == '408-2/1' %}
+                                        <img src="{% static 'images/room408_2.jpg' %}" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% elif room.room_id == '408-2/2' %}
+                                        <img src="{% static 'images/room406_2.jpg' %}" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% else %}
+                                        <img src="" alt="{{ room.name }}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    {% endif %}
+                                    <div class="room-card__photo-placeholder">&#127970;</div>
+                                </div>
+                                <div class="room-card__body">
+                                    <div class="room-card__name">{{ room.name }}</div>
+                                    <div class="room-card__id">{{ room.room_id }}</div>
+                                    <div class="room-card__meta">
+                                        <span>&#128101; {{ room.capacity }} ที่นั่ง</span>
+                                        <span>{% if room.room_type == 'Meeting' %}ห้องประชุม{% else %}ห้องบรรยาย{% endif %}</span>
+                                    </div>
+                                </div>
+                                <div class="room-card__check">&#10003;</div>
+                            </div>
+                            {% endfor %}
+                        </div>
 
-                <div id="teaching_fields" class="form-grid full-width" style="margin:0; padding:0; gap:15px;">
-                    <div class="input-group">
-                        <label>รหัสวิชา</label>
-                        <input type="text" name="course_code" id="course_code" placeholder="เช่น CN334">
-                    </div>
-                    <div class="input-group">
-                        <label>ชื่อวิชา</label>
-                        <input type="text" name="course_name" id="course_name" placeholder="Software Engineering">
-                    </div>
-                    <div class="input-group full-width">
-                        <label>หลักสูตร</label>
-                        <select name="program" id="program">
-                            <option value="">-- เลือกหลักสูตร --</option>
-                            <option value="Bachelor">ปริญญาตรีภาคปกติ</option>
-                            <option value="Master">ปริญญาโท</option>
-                            <option value="TEP_TEPE">TEP-TEPE</option>
-                            <option value="TU_PINE">TU-PINE</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div id="training_fields" class="input-group full-width" style="display:none;">
-                    <label>ชื่อเรื่องจัดอบรม/ติว</label>
-                    <input type="text" name="training_topic" id="training_topic" placeholder="เช่น ติวเข้มก่อนสอบมิดเทอม">
-                </div>
-
-                <div class="input-group full-width">
-                    <label>วันที่ต้องการใช้งาน</label>
-                    <input type="date" id="booking_date" required onchange="fetchTimeSlots()">
-                </div>
-
-                <div class="input-group full-width">
-                    <label>เลือกช่วงเวลา (สามารถคลิกหลายปุ่มต่อเนื่องกันได้)</label>
-                    <div id="time-slots-container" class="time-slots-grid">
-                        <p style="color: #666; font-size: 0.9em; grid-column: 1 / -1;">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>
+                        <div class="step-nav step-nav--first">
+                            <button type="button" class="btn btn--primary" onclick="goToStep(2)">ถัดไป &#8594;</button>
+                        </div>
                     </div>
                 </div>
 
-                <input type="hidden" name="start_time" id="hidden_start_time" required>
-                <input type="hidden" name="end_time" id="hidden_end_time" required>
+                <!-- ==============================
+                     ขั้นตอนที่ 2: วัตถุประสงค์
+                ================================ -->
+                <div class="wizard-panel" id="panel-2" style="display:none;">
+                    <div class="card">
+                        <div class="card__title">วัตถุประสงค์การใช้ห้อง</div>
 
-                <button type="submit" class="btn-submit full-width">ยืนยันการขอจองห้อง</button>
+                        <div class="purpose-cards">
+                            <label class="purpose-card" id="pc-teaching">
+                                <input type="radio" name="purpose_type" value="Teaching" checked>
+                                <div class="purpose-card__inner">
+                                    <div class="purpose-card__title">สอนปกติ / ชดเชย / เสริม</div>
+                                    <div class="purpose-card__desc">สำหรับการเรียนการสอนทุกรูปแบบ</div>
+                                </div>
+                            </label>
+                            <label class="purpose-card" id="pc-training">
+                                <input type="radio" name="purpose_type" value="Training">
+                                <div class="purpose-card__inner">
+                                    <div class="purpose-card__title">จัดอบรม / จัดติว</div>
+                                    <div class="purpose-card__desc">สำหรับการอบรมและการติวพิเศษ</div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Teaching fields -->
+                        <div id="teaching_fields" class="form-two-col" style="margin-top: var(--space-5);">
+                            <div class="form-group">
+                                <label class="form-label">รหัสวิชา</label>
+                                <input type="text" name="course_code" id="course_code" class="form-control" placeholder="เช่น CN334">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ชื่อวิชา</label>
+                                <input type="text" name="course_name" id="course_name" class="form-control" placeholder="Software Engineering">
+                            </div>
+                            <div class="form-group form-two-col__full">
+                                <label class="form-label">หลักสูตร</label>
+                                <select name="program" id="program" class="form-control">
+                                    <option value="">-- เลือกหลักสูตร --</option>
+                                    <option value="Bachelor">ปริญญาตรีภาคปกติ</option>
+                                    <option value="Master">ปริญญาโท</option>
+                                    <option value="TEP_TEPE">TEP-TEPE</option>
+                                    <option value="TU_PINE">TU-PINE</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Training fields -->
+                        <div id="training_fields" class="form-group" style="display:none; margin-top: var(--space-5);">
+                            <label class="form-label">ชื่อเรื่องจัดอบรม / ติว</label>
+                            <input type="text" name="training_topic" id="training_topic" class="form-control" placeholder="เช่น ติวเข้มก่อนสอบมิดเทอม">
+                        </div>
+
+                        <div class="step-nav">
+                            <button type="button" class="btn btn--ghost" onclick="goToStep(1)">&#8592; ย้อนกลับ</button>
+                            <span></span>
+                            <button type="button" class="btn btn--primary" onclick="goToStep(3)">ถัดไป &#8594;</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ==============================
+                     ขั้นตอนที่ 3: วันที่และเวลา
+                ================================ -->
+                <div class="wizard-panel" id="panel-3" style="display:none;">
+                    <div class="card">
+                        <div class="card__title">เลือกวันที่และช่วงเวลา</div>
+
+                        <div class="form-group">
+                            <label class="form-label form-label--required">วันที่ต้องการใช้งาน</label>
+                            <input type="date" id="booking_date" name="booking_date" class="form-control" required onchange="fetchTimeSlots()">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label form-label--required">
+                                เลือกช่วงเวลา
+                                <span style="font-weight: normal; color: var(--color-text-muted); font-size: var(--font-size-sm);">— คลิกหลายปุ่มต่อเนื่องกันได้</span>
+                            </label>
+                            <div id="time-slots-container" class="time-slots-grid">
+                                <p class="time-slot-hint">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>
+                            </div>
+                        </div>
+
+                        <div class="step-nav">
+                            <button type="button" class="btn btn--ghost" onclick="goToStep(2)">&#8592; ย้อนกลับ</button>
+                            <span></span>
+                            <button type="submit" class="btn btn--primary btn-submit">&#10003;&nbsp; ยืนยันการขอจองห้อง</button>
+                        </div>
+                    </div>
+                </div>
+
             </form>
-            <script>
-                function toggleFields() {
-                    const purpose = document.getElementById("purpose_type").value;
-                    const teachingFields = document.getElementById("teaching_fields");
-                    const trainingFields = document.getElementById("training_fields");
 
-                    if (purpose === "Teaching") {
-                        teachingFields.style.display = "grid";
-                        trainingFields.style.display = "none";
-                    } else {
-                        teachingFields.style.display = "none";
-                        trainingFields.style.display = "grid";
-                    }
-                }
-                window.onload = toggleFields;
-            </script>
         </div>
-    </main>
+    </div>
+
 </div>
+
 <script>
-    const allSlots = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+    let currentStep = 1;
+
+    /* ---- Step navigation ---- */
+    function goToStep(step) {
+        if (step > currentStep) {
+            if (currentStep === 1 && !document.getElementById('selectedRoom').value) {
+                alert('กรุณาเลือกห้องก่อนครับ');
+                return;
+            }
+        }
+
+        document.getElementById('panel-' + currentStep).style.display = 'none';
+        document.getElementById('panel-' + step).style.display = 'block';
+
+        for (let i = 1; i <= 3; i++) {
+            const wi = document.getElementById('wi-' + i);
+            wi.classList.remove('active', 'done');
+            if (i < step)  wi.classList.add('done');
+            if (i === step) wi.classList.add('active');
+        }
+        for (let i = 1; i <= 2; i++) {
+            document.getElementById('wc-' + i).classList.toggle('done', i < step);
+        }
+
+        currentStep = step;
+        if (step === 3) {
+            if (prefillStart) {
+                document.getElementById('booking_date').value = prefillStart.split('T')[0];
+                fetchTimeSlots(prefillStart, prefillEnd);
+            } else if (prefillDate) {
+                document.getElementById('booking_date').value = prefillDate;
+                fetchTimeSlots();
+            } else {
+                fetchTimeSlots();
+            }
+        }
+    }
+
+    /* ---- Room selection ---- */
+    function selectRoom(el, roomId) {
+        document.querySelectorAll('.room-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        document.getElementById('selectedRoom').value = roomId;
+    }
+
+    /* ---- Purpose type toggle ---- */
+    function updatePurposeFields() {
+        const isTeaching = document.querySelector('input[name="purpose_type"]:checked').value === 'Teaching';
+        document.getElementById('teaching_fields').style.display = isTeaching ? 'grid' : 'none';
+        document.getElementById('training_fields').style.display = isTeaching ? 'none' : 'block';
+        document.querySelectorAll('.purpose-card').forEach(c => c.classList.remove('selected'));
+        document.querySelector('input[name="purpose_type"]:checked').closest('.purpose-card').classList.add('selected');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('input[name="purpose_type"]').forEach(r => r.addEventListener('change', updatePurposeFields));
+        updatePurposeFields();
+
+        document.getElementById('booking_date').setAttribute('min', new Date().toISOString().split('T')[0]);
+
+        /* Pre-fill from URL params (e.g. click-to-book from calendar) */
+        const params = new URLSearchParams(window.location.search);
+        const roomParam  = params.get('room');
+        const dateParam  = params.get('date');
+        const startParam = params.get('start');
+        const endParam   = params.get('end');
+
+        if (roomParam) {
+            const card = document.querySelector(`.room-card[data-room-id="${roomParam}"]`);
+            if (card) selectRoom(card, roomParam);
+            if (dateParam) {
+                prefillDate = dateParam;
+                goToStep(2);
+            } else if (startParam) {
+                prefillStart = startParam;
+                prefillEnd   = endParam;
+                goToStep(2);
+            }
+        }
+    });
+
+    /* ---- Time-slot API ---- */
+    const allSlots = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00"];
     let selectedSlots = [];
+    let prefillDate = null, prefillStart = null, prefillEnd = null;
 
     async function fetchTimeSlots(autoSelectStart = null, autoSelectEnd = null) {
-    const roomId = document.getElementById('roomSelect').value;
-    const dateVal = document.getElementById('booking_date').value;
-    const container = document.getElementById('time-slots-container');
-    
-    selectedSlots = [];
-    updateHiddenInputs();
+        const roomId  = document.getElementById('selectedRoom').value;
+        const dateVal = document.getElementById('booking_date').value;
+        const container = document.getElementById('time-slots-container');
 
-    if (!roomId || !dateVal) {
-        container.innerHTML = '<p style="color: #666; font-size: 0.9em; grid-column: 1 / -1;">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>';
-        return;
-    }
+        selectedSlots = [];
+        updateHiddenInputs();
 
-    container.innerHTML = '<p style="color: #666; grid-column: 1 / -1;">กำลังตรวจสอบคิวว่าง...</p>';
-
-    try {
-        const response = await fetch(`/api/booked-slots/?room_id=${roomId}&date=${dateVal}`);
-        const data = await response.json();
-        renderSlots(data.booked_slots);
-
-        if (autoSelectStart && autoSelectEnd) {
-            const startTime = autoSelectStart.split('T')[1].substring(0, 5); // ดึงเฉพาะ hh:mm
-            const endTime = autoSelectEnd.split('T')[1].substring(0, 5);
-            
-            const slots = document.querySelectorAll('.time-slot:not(.disabled)');
-            slots.forEach(slot => {
-                const slotStart = slot.dataset.start;
-                if (slotStart >= startTime && slotStart < endTime) {
-                    toggleSlot(slot);
-                }
-            });
+        if (!roomId || !dateVal) {
+            container.innerHTML = '<p class="time-slot-hint">กรุณาเลือกห้องและวันที่ เพื่อดูเวลาที่ว่างครับ</p>';
+            return;
         }
-    } catch (error) {
-        container.innerHTML = '<p style="color: red; grid-column: 1 / -1;">เกิดข้อผิดพลาดในการดึงข้อมูล</p>';
+
+        container.innerHTML = '<p class="time-slot-hint">กำลังตรวจสอบคิวว่าง...</p>';
+
+        try {
+            const res  = await fetch(`/api/booked-slots/?room_id=${roomId}&date=${dateVal}`);
+            const data = await res.json();
+            renderSlots(data.booked_slots);
+
+            if (autoSelectStart && autoSelectEnd) {
+                const s = autoSelectStart.split('T')[1].substring(0, 5);
+                const e = autoSelectEnd.split('T')[1].substring(0, 5);
+                document.querySelectorAll('.time-slot:not(.disabled)').forEach(slot => {
+                    if (slot.dataset.start >= s && slot.dataset.start < e) toggleSlot(slot);
+                });
+            }
+        } catch (_) {
+            container.innerHTML = '<p class="time-slot-hint time-slot-hint--error">เกิดข้อผิดพลาดในการดึงข้อมูล</p>';
+        }
     }
-}
 
     function renderSlots(bookedSlots) {
         const container = document.getElementById('time-slots-container');
         container.innerHTML = '';
-
         allSlots.forEach(time => {
-            const h = parseInt(time.split(':')[0]);
+            const h       = parseInt(time.split(':')[0]);
             const nextTime = `${(h + 1).toString().padStart(2, '0')}:00`;
-            
             const btn = document.createElement('div');
-            btn.className = 'time-slot';
+            btn.className    = 'time-slot';
             btn.dataset.start = time;
-            btn.dataset.end = nextTime;
-            btn.innerText = `${time} - ${nextTime}`;
-
+            btn.dataset.end   = nextTime;
+            btn.innerText     = `${time} – ${nextTime}`;
             const isBooked = bookedSlots.some(b => time >= b.start && time < b.end);
-
             if (isBooked) {
                 btn.classList.add('disabled');
             } else {
                 btn.onclick = () => toggleSlot(btn);
             }
-
             container.appendChild(btn);
         });
     }
 
     function toggleSlot(btn) {
         if (btn.classList.contains('disabled')) return;
-        
         const time = btn.dataset.start;
-
         if (btn.classList.contains('selected')) {
             btn.classList.remove('selected');
             selectedSlots = selectedSlots.filter(t => t !== time);
@@ -368,20 +398,15 @@
             btn.classList.add('selected');
             selectedSlots.push(time);
         }
-
         selectedSlots.sort();
 
-        let isContiguous = true;
+        let contiguous = true;
         for (let i = 0; i < selectedSlots.length - 1; i++) {
-            let currentH = parseInt(selectedSlots[i].split(':')[0]);
-            let nextH = parseInt(selectedSlots[i+1].split(':')[0]);
-            if (nextH - currentH !== 1) {
-                isContiguous = false;
-                break;
-            }
+            const a = parseInt(selectedSlots[i].split(':')[0]);
+            const b = parseInt(selectedSlots[i + 1].split(':')[0]);
+            if (b - a !== 1) { contiguous = false; break; }
         }
-
-        if (!isContiguous) {
+        if (!contiguous) {
             alert('กรุณาเลือกช่วงเวลาที่ต่อเนื่องกันครับ หากต้องการจองแยกช่วง ให้แยกทำรายการครับ');
             btn.classList.remove('selected');
             selectedSlots = selectedSlots.filter(t => t !== time);
@@ -391,52 +416,20 @@
     }
 
     function updateHiddenInputs() {
-        const dateVal = document.getElementById('booking_date').value;
+        const dateVal    = document.getElementById('booking_date').value;
         const startInput = document.getElementById('hidden_start_time');
-        const endInput = document.getElementById('hidden_end_time');
-
+        const endInput   = document.getElementById('hidden_end_time');
         if (selectedSlots.length > 0 && dateVal) {
-            const firstSlot = document.querySelector(`.time-slot[data-start="${selectedSlots[0]}"]`);
-            const lastSlot = document.querySelector(`.time-slot[data-start="${selectedSlots[selectedSlots.length - 1]}"]`);
-
-            startInput.value = `${dateVal}T${firstSlot.dataset.start}:00`;
-            endInput.value = `${dateVal}T${lastSlot.dataset.end}:00`;
+            const first = document.querySelector(`.time-slot[data-start="${selectedSlots[0]}"]`);
+            const last  = document.querySelector(`.time-slot[data-start="${selectedSlots[selectedSlots.length - 1]}"]`);
+            startInput.value = `${dateVal}T${first.dataset.start}:00`;
+            endInput.value   = `${dateVal}T${last.dataset.end}:00`;
         } else {
             startInput.value = '';
-            endInput.value = '';
+            endInput.value   = '';
         }
     }
-
-    function getUrlParams() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-        room: params.get('room'),
-        date: params.get('date'),
-        start: params.get('start'),
-        end: params.get('end')
-    };
-}
-
-    document.addEventListener("DOMContentLoaded", function() {
-    const params = getUrlParams();
-    
-    if (params.room) {
-        document.getElementById('roomSelect').value = params.room;
-
-        if (params.date) {
-            document.getElementById('booking_date').value = params.date;
-            fetchTimeSlots();
-        } 
-        else if (params.start && params.end) {
-            const startDate = params.start.split('T')[0];
-            document.getElementById('booking_date').value = startDate;
-            fetchTimeSlots(params.start, params.end);
-        }
-    }
-
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById("booking_date").setAttribute('min', today);
-    });
 </script>
+
 </body>
 </html>

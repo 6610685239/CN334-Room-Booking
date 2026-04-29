@@ -70,7 +70,7 @@ def logout_view(request):
 
 @login_required
 def create_booking_view(request):
-    rooms = Room.objects.filter(is_active=True)
+    rooms = Room.objects.filter(is_active=True).order_by('room_id')
 
     if request.method == "POST":
         try:
@@ -205,7 +205,7 @@ def api_get_bookings(request):
                 "end": localtime(b.end_time).strftime("%Y-%m-%dT%H:%M:%S"),
                 "color": event_color,
                 "description": b.get_purpose_type_display(),
-                "extendedProps": {"status": b.status, "room_name": b.room.name},
+                "extendedProps": {"status": b.status, "room_name": b.room.name, "room_id": b.room.room_id},
             }
         )
 
@@ -214,5 +214,5 @@ def api_get_bookings(request):
 
 @login_required
 def calendar_view(request):
-    rooms = Room.objects.filter(is_active=True)
+    rooms = Room.objects.filter(is_active=True).order_by('room_id')
     return render(request, "bookings/calendar.html", {"rooms": rooms})

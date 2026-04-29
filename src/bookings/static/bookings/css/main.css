@@ -1,0 +1,10 @@
+/* ============================================================
+   MAIN — Entry point, imports all CSS modules in order
+   Usage: <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+   ============================================================ */
+
+@import url('variables.css');
+@import url('base.css');
+@import url('layout.css');
+@import url('components.css');
+@import url('pages.css');

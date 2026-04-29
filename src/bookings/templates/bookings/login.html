@@ -5,81 +5,185 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เข้าสู่ระบบ | ระบบจองห้องวิศวกรรมศาสตร์</title>
     <style>
-
         body {
             margin: 0;
             height: 100vh;
             display: grid;
             place-items: center;
-            background-color: #f4f6f9;
+            background-color: #f0f2f5;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .login-card {
             display: grid;
-            gap: 20px;
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 350px;
+            grid-template-columns: 1fr 1fr;
+            width: 780px;
+            min-height: 420px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
 
-        .login-header {
+        /* ── LEFT PANEL ── */
+        .panel-left {
+            background-color: #8B1A1A;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 32px;
             text-align: center;
+            gap: 16px;
         }
 
-        .login-header h2 {
+        .panel-left .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 26px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .panel-left .logo svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+
+        .panel-left h2 {
             margin: 0;
-            color: #C0392B; /* ใช้สีโทนแดงมหาวิทยาลัย */
+            font-size: 20px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        .panel-left p {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+
+        /* ── RIGHT PANEL ── */
+        .panel-right {
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 48px 40px;
+        }
+
+        .panel-right h1 {
+            margin: 0 0 6px 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .panel-right .subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 28px;
         }
 
         .input-group {
             display: grid;
-            gap: 8px;
+            gap: 6px;
+            margin-bottom: 18px;
         }
 
-        input {
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
+        .input-group label {
             font-size: 14px;
+            font-weight: 500;
+            color: #333;
         }
 
-        button {
-            padding: 12px;
+        .input-group label .required {
+            color: #C0392B;
+        }
+
+        .input-group input {
+            padding: 11px 14px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input::placeholder {
+            color: #aaa;
+        }
+
+        .input-group input:focus {
+            border-color: #C0392B;
+            box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.12);
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 13px;
             background-color: #C0392B;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             font-size: 16px;
-            font-weight: bold;
+            font-weight: 600;
+            font-family: inherit;
             cursor: pointer;
-            transition: background 0.3s;
+            margin-top: 8px;
+            transition: background 0.2s;
         }
 
-        button:hover {
+        button[type="submit"]:hover {
             background-color: #922B21;
         }
 
         .error-msg {
             color: #C0392B;
             font-size: 14px;
-            text-align: center;
             background: #FADBD8;
-            padding: 10px;
-            border-radius: 5px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .login-card {
+                grid-template-columns: 1fr;
+                width: 95vw;
+            }
+            .panel-left { padding: 28px 24px; }
         }
     </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <div class="login-header">
-            <h2>TU Room Booking</h2>
-            <p>กรุณาเข้าสู่ระบบด้วยบัญชี TU</p>
+<div class="login-card">
+
+    <!-- LEFT -->
+    <div class="panel-left">
+        <div class="logo">
+            <!-- Gear icon -->
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12 3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5 3.5 3.5 0 0 1-3.5 3.5m7.43-2.92c.04-.34.07-.69.07-1.08s-.03-.74-.07-1.08l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.34-.07.69-.07 1.08s.03.74.07 1.08L2.7 13.57c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.58 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65z"/>
+            </svg>
+            TSE
         </div>
+
+        <h2>ระบบจองห้องประชุม<br>และห้องเรียน</h2>
+
+        <p>ภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์</p>
+        <p>มหาวิทยาลัยธรรมศาสตร์</p>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel-right">
+        <h1>เข้าสู่ระบบ</h1>
+        <p class="subtitle">ใช้บัญชี TU Account เพื่อเข้าสู่ระบบ</p>
 
         {% if messages %}
             {% for message in messages %}
@@ -87,21 +191,24 @@
             {% endfor %}
         {% endif %}
 
-        <form method="POST" style="display: grid; gap: 20px;">
+        <form method="POST">
             {% csrf_token %}
+
             <div class="input-group">
-                <label for="username">ชื่อผู้ใช้งาน (Username)</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">ชื่อผู้ใช้งาน (Username) <span class="required">*</span></label>
+                <input type="text" id="username" name="username" placeholder="กรอก Username TU Account" required>
             </div>
-            
+
             <div class="input-group">
-                <label for="password">รหัสผ่าน (Password)</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">รหัสผ่าน (Password) <span class="required">*</span></label>
+                <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่านของท่าน" required>
             </div>
-            
+
             <button type="submit">เข้าสู่ระบบ</button>
         </form>
     </div>
+
+</div>
 
 </body>
 </html>
