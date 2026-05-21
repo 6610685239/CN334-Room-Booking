@@ -119,7 +119,7 @@ def create_booking_view(request):
                 if base_start_dt <= now:
                     messages.error(
                         request,
-                        "ไม่สามารถจองเวลาที่ผ่านมาแล้วได้ กรุณาเลือกเวลาในอนาคต",
+                        "ไม่สามารถจองเวลาที่ผ่านมาแล้วได้",
                     )
                     return render(
                         request,
