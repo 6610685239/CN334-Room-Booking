@@ -12,9 +12,21 @@ def dashboard_view(request):
     now = timezone.now()
     if request.user.role == "Admin":
         bookings = Booking.objects.filter(status="Pending").order_by("start_time")
+        pending_count   = bookings.count()
+        total_rooms     = Room.objects.filter(is_active=True).count()
+        approved_today  = Booking.objects.filter(
+            status="Approved", start_time__date=now.date()
+        ).count()
+        total_today     = Booking.objects.filter(
+            start_time__date=now.date()
+        ).exclude(status__in=["Cancelled", "Rejected"]).count()
         return render(request, "dashboard/admin_dashboard.html", {
-            "bookings": bookings,
-            "now": now,
+            "bookings":       bookings,
+            "now":            now,
+            "pending_count":  pending_count,
+            "total_rooms":    total_rooms,
+            "approved_today": approved_today,
+            "total_today":    total_today,
         })
     else:
         all_bookings = Booking.objects.filter(user=request.user)

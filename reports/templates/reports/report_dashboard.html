@@ -6,29 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>รายงานสถิติการใช้ห้อง | ระบบจองห้อง ECE</title>
     <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
-    <style>
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-sm); }
-        th { background: var(--gray-50); color: var(--gray-600); font-weight: var(--font-weight-semi); }
-        tr:hover td { background: var(--gray-50); }
-
-        .stat-card-custom {
-            background: var(--color-bg-card);
-            padding: var(--space-5);
-            border-radius: var(--radius-xl);
-            border-left: 5px solid var(--tu-red);
-            box-shadow: var(--shadow-sm);
-        }
-        .stat-card-custom h3 { margin: 0 0 8px 0; color: var(--color-text-muted); font-size: var(--font-size-sm); font-weight: var(--font-weight-medium); }
-        .stat-card-custom .value { font-size: var(--font-size-2xl); font-weight: var(--font-weight-bold); color: var(--color-text-heading); }
-
-        .progress-bar-bg { background: var(--gray-200); border-radius: var(--radius-full); height: 10px; overflow: hidden; margin-top: 5px; }
-        .progress-bar-fill { background: var(--status-approved); height: 100%; }
-    </style>
 </head>
 <body>
 
 <input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
 
 <div class="app-shell">
 
@@ -82,6 +64,10 @@
 
     <!-- Main content -->
     <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">รายงาน</span>
+        </div>
         <div class="page-content">
 
             <div class="page-header">
@@ -90,13 +76,13 @@
             </div>
 
             <!-- Filter -->
-            <div class="card card--compact" style="margin-bottom: var(--space-6);">
-                <form style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-4); align-items: end;" method="GET">
-                    <div class="form-group" style="margin: 0;">
+            <div class="card card--compact card--filter-bar">
+                <form class="reports-filter-form" method="GET">
+                    <div class="form-group form-group--no-margin">
                         <label class="form-label">ตั้งแต่วันที่</label>
                         <input type="date" name="start_date" value="{{ start_date }}" class="form-control" required>
                     </div>
-                    <div class="form-group" style="margin: 0;">
+                    <div class="form-group form-group--no-margin">
                         <label class="form-label">ถึงวันที่</label>
                         <input type="date" name="end_date" value="{{ end_date }}" class="form-control" required>
                     </div>
@@ -105,7 +91,7 @@
             </div>
 
             <!-- Stat cards -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6);">
+            <div class="reports-stats-inline">
                 <div class="stat-card-custom">
                     <h3>การจองทั้งหมด (ครั้ง)</h3>
                     <div class="value">{{ total_bookings }}</div>
@@ -127,7 +113,8 @@
             <!-- Room stats table -->
             <div class="card card--compact">
                 <div class="card__title--sm">สถิติแยกตามห้อง (Room Utilization)</div>
-                <table>
+                <div class="table-responsive">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>รหัสห้อง</th>
@@ -158,6 +145,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
 
         </div>

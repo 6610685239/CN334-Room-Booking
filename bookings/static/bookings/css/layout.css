@@ -317,13 +317,17 @@
     transform: translateX(0);
   }
 
-  /* Overlay backdrop */
-  #sidebar-toggle:checked ~ .app-shell::before {
-    content: '';
+  /* Overlay backdrop — a <label for="sidebar-toggle"> so clicking it closes the sidebar */
+  .sidebar-overlay {
     position: fixed;
     inset: 0;
     background-color: rgba(0,0,0,.4);
     z-index: 190;
+    display: none;
+    cursor: default;
+  }
+  #sidebar-toggle:checked ~ .sidebar-overlay {
+    display: block;
   }
 
   .main-panel {

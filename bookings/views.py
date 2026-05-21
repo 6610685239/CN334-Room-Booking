@@ -30,9 +30,22 @@ def tu_login_view(request):
         data = {"UserName": username, "PassWord": password}
 
         try:
-            response = requests.post(url, json=data, headers=headers)
-            result = response.json()
+            response = requests.post(url, json=data, headers=headers, timeout=10)
+        except requests.exceptions.Timeout:
+            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ (หมดเวลา) กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
 
+        try:
+            result = response.json()
+        except ValueError:
+            print(f"TU API returned non-JSON response: {response.status_code} {response.text[:200]}")
+            messages.error(request, "ระบบยืนยันตัวตนตอบสนองผิดปกติ กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
+
+        try:
             if response.status_code == 200 and result.get("status") == True:
                 api_username = result.get("username")
                 display_name = result.get("displayname_th", "")
