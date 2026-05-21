@@ -10,6 +10,8 @@ from django.core.exceptions import ValidationError
 from .models import User, Room, Booking
 from django.http import JsonResponse
 from django.utils.timezone import localtime
+from django.utils import timezone
+from datetime import datetime, timedelta
 
 
 def tu_login_view(request):
@@ -70,68 +72,186 @@ def logout_view(request):
 
 @login_required
 def create_booking_view(request):
-    rooms = Room.objects.filter(is_active=True).order_by('room_id')
+    rooms = Room.objects.filter(is_active=True).order_by("room_id")
 
     if request.method == "POST":
-        try:
-            room = Room.objects.get(room_id=request.POST.get("room"), is_active=True)
+        room_id = request.POST.get("room")
+        purpose_type = request.POST.get("purpose_type")
+        course_code = request.POST.get("course_code")
+        course_name = request.POST.get("course_name")
+        program = request.POST.get("program")
+        training_topic = request.POST.get("training_topic")
 
-            booking = Booking(
-                user=request.user,
-                room=room,
-                purpose_type=request.POST.get("purpose_type"),
-                course_code=request.POST.get("course_code"),
-                course_name=request.POST.get("course_name"),
-                program=request.POST.get("program"),
-                training_topic=request.POST.get("training_topic"),
-                start_time=parse_datetime(request.POST.get("start_time")),
-                end_time=parse_datetime(request.POST.get("end_time")),
-                status="Pending",
-            )
+        # ฟิลด์ที่เพิ่มมาใหม่สำหรับแยกว่าเป็นการจองแบบไหน
+        hidden_start = request.POST.get("start_time")
+        hidden_end = request.POST.get("end_time")
+        booking_type = request.POST.get("booking_type", "single")
 
-            booking.full_clean()
-            booking.save()
-
-            subject = f"มีการขอจองห้องใหม่: ห้อง {room.room_id}"
-            message = (
-                f"ผู้ใช้งาน {request.user.username} ได้ขอจองห้อง {room.room_id}\n"
-                f'วันที่: {booking.start_time.strftime("%d/%m/%Y %H:%M")} ถึง {booking.end_time.strftime("%H:%M")}\n'
-                f"กรุณาตรวจสอบและดำเนินการในระบบ"
-            )
-
-            admin_emails = User.objects.filter(role="Admin").values_list(
-                "email", flat=True
-            )
-            admin_emails = [e for e in admin_emails if e]
-
-            if admin_emails:
-                subject = f"[แจ้งเตือน] คำขอจองห้องใหม่: {booking.room.room_id}"
-                message = (
-                    f"อาจารย์ {request.user.first_name or request.user.username} ได้ส่งคำขอจองห้อง\n"
-                    f"ห้อง: {booking.room.room_id}\n"
-                    f'วันที่: {booking.start_time.strftime("%d/%m/%Y %H:%M")} เป็นต้นไป\n\n'
-                    f'กรุณาตรวจสอบที่ระบบ Dashboard: {request.build_absolute_uri("/dashboard/")}'
-                )
-
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    admin_emails,
-                    fail_silently=True,
-                )
-
-            messages.success(request, "ส่งคำขอจองห้องสำเร็จ! กรุณารอการอนุมัติ")
+        if not hidden_start or not hidden_end:
+            messages.error(request, "กรุณาเลือกช่วงเวลาให้ครบถ้วน")
             return redirect("book_room")
 
-        except ValidationError as e:
-            for message in e.messages:
-                messages.error(request, message)
+        try:
+            room = Room.objects.get(room_id=room_id, is_active=True)
+            base_start_dt = parse_datetime(hidden_start)
+            base_end_dt = parse_datetime(hidden_end)
+
+            created_bookings = []  # เก็บลิสต์การจองที่สร้างสำเร็จเพื่อเอาไปส่งอีเมล
+            conflict_count = 0
+
+            # ---------------------------------------------------------
+            # กรณี 1: จองแบบครั้งเดียว (Single Booking)
+            # ---------------------------------------------------------
+            if booking_type == "single":
+                # เช็คคิวชน
+                conflict = Booking.objects.filter(
+                    room=room,
+                    status__in=["Pending", "Approved"],
+                    start_time__lt=base_end_dt,
+                    end_time__gt=base_start_dt,
+                ).exists()
+
+                if conflict:
+                    messages.error(
+                        request,
+                        "ขออภัย ช่วงเวลาที่คุณเลือกมีผู้จองแล้ว กรุณาเลือกเวลาอื่นครับ",
+                    )
+                    return redirect("book_room")
+
+                booking = Booking.objects.create(
+                    user=request.user,
+                    room=room,
+                    purpose_type=purpose_type,
+                    course_code=course_code,
+                    course_name=course_name,
+                    program=program,
+                    training_topic=training_topic,
+                    start_time=base_start_dt,
+                    end_time=base_end_dt,
+                    status="Pending",
+                )
+                created_bookings.append(booking)
+                messages.success(
+                    request, f"ส่งคำขอจองห้อง {room.name} สำเร็จ! กรุณารอการอนุมัติ"
+                )
+
+            # ---------------------------------------------------------
+            # กรณี 2: จองแบบต่อเนื่อง (Recurring Booking)
+            # ---------------------------------------------------------
+            elif booking_type == "recurring":
+                recur_start = request.POST.get("recur_start_date")
+                recur_end = request.POST.get("recur_end_date")
+                days_of_week = request.POST.getlist("days_of_week")
+
+                if not recur_start or not recur_end or not days_of_week:
+                    messages.error(
+                        request,
+                        "กรุณาระบุวันที่เริ่มต้น สิ้นสุด และวันในสัปดาห์ให้ครบถ้วน",
+                    )
+                    return redirect("book_room")
+
+                start_date = parse_date(recur_start)
+                end_date = parse_date(recur_end)
+                selected_days = [int(day) for day in days_of_week]
+
+                current_date = start_date
+
+                # วนลูปสร้างรายการจองตามวันที่เลือก
+                while current_date <= end_date:
+                    if current_date.weekday() in selected_days:
+                        target_start = timezone.make_aware(
+                            datetime.combine(current_date, base_start_dt.time())
+                        )
+                        target_end = timezone.make_aware(
+                            datetime.combine(current_date, base_end_dt.time())
+                        )
+
+                        conflict = Booking.objects.filter(
+                            room=room,
+                            status__in=["Pending", "Approved"],
+                            start_time__lt=target_end,
+                            end_time__gt=target_start,
+                        ).exists()
+
+                        if not conflict:
+                            bk = Booking.objects.create(
+                                user=request.user,
+                                room=room,
+                                purpose_type=purpose_type,
+                                course_code=course_code,
+                                course_name=course_name,
+                                program=program,
+                                training_topic=training_topic,
+                                start_time=target_start,
+                                end_time=target_end,
+                                status="Pending",
+                            )
+                            created_bookings.append(bk)
+                        else:
+                            conflict_count += 1
+
+                    current_date += timedelta(days=1)
+
+                if len(created_bookings) > 0:
+                    msg = f"สร้างการจองต่อเนื่องสำเร็จ {len(created_bookings)} รายการ"
+                    if conflict_count > 0:
+                        msg += f" (ระบบข้ามวันที่คิวชนไป {conflict_count} วัน)"
+                    messages.success(request, msg)
+                else:
+                    messages.error(
+                        request,
+                        "ไม่สามารถสร้างการจองได้เลย เนื่องจากคิวเต็ม หรือช่วงวันที่ไม่ตรงกับวันในสัปดาห์",
+                    )
+                    return redirect("book_room")
+
+            # ---------------------------------------------------------
+            # ส่งอีเมลแจ้งเตือน Admin (ใช้โค้ดเดิมของคุณ)
+            # ---------------------------------------------------------
+            if len(created_bookings) > 0:
+                admin_emails = User.objects.filter(role="Admin").values_list(
+                    "email", flat=True
+                )
+                admin_emails = [e for e in admin_emails if e]
+
+                if admin_emails:
+                    first_bk = created_bookings[0]  # อ้างอิงเวลาจากคิวแรก
+                    subject = f"[แจ้งเตือน] คำขอจองห้องใหม่: {first_bk.room.room_id}"
+
+                    if booking_type == "recurring":
+                        message = (
+                            f"อาจารย์ {request.user.first_name or request.user.username} ได้ส่งคำขอจองห้องแบบต่อเนื่อง\n"
+                            f"ห้อง: {first_bk.room.room_id}\n"
+                            f"จำนวน: {len(created_bookings)} รายการ\n"
+                            f'เริ่มตั้งแต่วันที่: {first_bk.start_time.strftime("%d/%m/%Y %H:%M")}\n\n'
+                            f'กรุณาตรวจสอบที่ระบบ Dashboard: {request.build_absolute_uri("/dashboard/")}'
+                        )
+                    else:
+                        message = (
+                            f"อาจารย์ {request.user.first_name or request.user.username} ได้ส่งคำขอจองห้อง\n"
+                            f"ห้อง: {first_bk.room.room_id}\n"
+                            f'วันที่: {first_bk.start_time.strftime("%d/%m/%Y %H:%M")} เป็นต้นไป\n\n'
+                            f'กรุณาตรวจสอบที่ระบบ Dashboard: {request.build_absolute_uri("/dashboard/")}'
+                        )
+
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        admin_emails,
+                        fail_silently=True,
+                    )
+
+            return redirect("dashboard")
+
         except Room.DoesNotExist:
             messages.error(request, "ห้องนี้ปิดใช้งานหรือไม่พร้อมสำหรับการจอง")
         except Exception as e:
-            messages.error(request, "เกิดข้อผิดพลาด หรือรูปแบบวันที่ไม่ถูกต้อง")
+            print(f"Error booking: {e}")
+            messages.error(
+                request, "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาตรวจสอบความถูกต้อง"
+            )
 
+    # --- ส่วนการส่งค่ากลับไป render หน้าเว็บ (โค้ดเดิม) ---
     initial_room = request.GET.get("room", "")
     initial_start = request.GET.get("start", "")
     initial_end = request.GET.get("end", "")
@@ -205,7 +325,11 @@ def api_get_bookings(request):
                 "end": localtime(b.end_time).strftime("%Y-%m-%dT%H:%M:%S"),
                 "color": event_color,
                 "description": b.get_purpose_type_display(),
-                "extendedProps": {"status": b.status, "room_name": b.room.name, "room_id": b.room.room_id},
+                "extendedProps": {
+                    "status": b.status,
+                    "room_name": b.room.name,
+                    "room_id": b.room.room_id,
+                },
             }
         )
 
@@ -214,5 +338,5 @@ def api_get_bookings(request):
 
 @login_required
 def calendar_view(request):
-    rooms = Room.objects.filter(is_active=True).order_by('room_id')
+    rooms = Room.objects.filter(is_active=True).order_by("room_id")
     return render(request, "bookings/calendar.html", {"rooms": rooms})

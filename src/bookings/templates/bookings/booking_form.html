@@ -219,8 +219,49 @@
                         <div class="card__title">เลือกวันที่และช่วงเวลา</div>
 
                         <div class="form-group">
+                            <label class="form-label">รูปแบบการจอง</label>
+                            <div style="display: flex; gap: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+                                <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="booking_type" value="single" id="type_single" checked onchange="toggleBookingType()"> 
+                                    จองครั้งเดียว (ระบุวันที่)
+                                </label>
+                                <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <input type="radio" name="booking_type" value="recurring" id="type_recurring" onchange="toggleBookingType()"> 
+                                    จองต่อเนื่อง (เลือกวันในสัปดาห์)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group" id="section_single_date">
                             <label class="form-label form-label--required">วันที่ต้องการใช้งาน</label>
                             <input type="date" id="booking_date" name="booking_date" class="form-control" required onchange="fetchTimeSlots()">
+                        </div>
+
+                        <div id="section_recurring_date" style="display: none; background: #eef2f5; padding: 15px; border-radius: 5px; border: 1px dashed #bdc3c7; margin-bottom: 20px;">
+                            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label class="form-label form-label--required">วันที่เริ่มต้น</label>
+                                    <input type="date" name="recur_start_date" id="recur_start_date" class="form-control" onchange="syncRecurringDate()">
+                                </div>
+                                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                                    <label class="form-label form-label--required">วันที่สิ้นสุด</label>
+                                    <input type="date" name="recur_end_date" id="recur_end_date" class="form-control">
+                                </div>
+                            </div>
+                            
+                            <label class="form-label form-label--required" style="margin-bottom: 10px; display: block;">วันในสัปดาห์ที่ต้องการใช้งาน (เลือกได้มากกว่า 1 วัน)</label>
+                            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="0"> จันทร์</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="1"> อังคาร</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="2"> พุธ</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="3"> พฤหัสบดี</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="4"> ศุกร์</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="5"> เสาร์</label>
+                                <label style="font-weight: normal;"><input type="checkbox" name="days_of_week" value="6"> อาทิตย์</label>
+                            </div>
+                            <p style="font-size: 0.85em; color: #c0392b; margin-top: 10px; line-height: 1.4;">
+                                * ระบบจะทำการสร้างรายการจองหลายรายการ ตามวันและเวลาที่ตรงกันในช่วงวันที่คุณเลือก หากมีบางวันที่เวลาถูกจองไปแล้ว ระบบจะข้ามวันนั้นไปอัตโนมัติ
+                            </p>
                         </div>
 
                         <div class="form-group">
@@ -328,6 +369,47 @@
                 goToStep(2);
             }
         }
+    });
+
+    /* ---- Recurring Booking Logic ---- */
+    function toggleBookingType() {
+        const isRecurring = document.getElementById('type_recurring').checked;
+        const singleSection = document.getElementById('section_single_date');
+        const recurSection = document.getElementById('section_recurring_date');
+        
+        if (isRecurring) {
+            singleSection.style.display = 'none';
+            recurSection.style.display = 'block';
+            
+            document.getElementById('booking_date').removeAttribute('required');
+            document.getElementById('recur_start_date').setAttribute('required', 'true');
+            document.getElementById('recur_end_date').setAttribute('required', 'true');
+        } else {
+            singleSection.style.display = 'block';
+            recurSection.style.display = 'none';
+            
+            document.getElementById('booking_date').setAttribute('required', 'true');
+            document.getElementById('recur_start_date').removeAttribute('required');
+            document.getElementById('recur_end_date').removeAttribute('required');
+        }
+    }
+
+    function syncRecurringDate() {
+        const recurStart = document.getElementById('recur_start_date').value;
+        if (recurStart) {
+            // ซิงค์ค่าไปให้ปุ่ม Time Slots ใช้ตรวจสอบคิวของวันแรก
+            document.getElementById('booking_date').value = recurStart;
+            fetchTimeSlots(); 
+        }
+    }
+
+    // เซ็ตให้ช่องวันที่ใหม่ ไม่สามารถเลือกย้อนหลังได้ (เพิ่มต่อท้ายใน DOMContentLoaded)
+    document.addEventListener("DOMContentLoaded", function() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const recurStartInput = document.getElementById("recur_start_date");
+        const recurEndInput = document.getElementById("recur_end_date");
+        if (recurStartInput) recurStartInput.setAttribute('min', todayStr);
+        if (recurEndInput) recurEndInput.setAttribute('min', todayStr);
     });
 
     /* ---- Time-slot API ---- */
