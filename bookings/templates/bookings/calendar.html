@@ -438,6 +438,11 @@
             nowIndicator: true,
             selectable:   true,
             selectMirror: true,
+            selectAllow: function (selectInfo) {
+                const startDate = selectInfo.start.toDateString();
+                const endDate = new Date(selectInfo.end.valueOf() - 1).toDateString();
+                return startDate === endDate; 
+            },
             displayEventTime: true,
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
             events: '/api/bookings/',
