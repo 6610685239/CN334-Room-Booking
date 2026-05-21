@@ -191,8 +191,11 @@
             {% endfor %}
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" id="login-form">
             {% csrf_token %}
+
+            {# Hidden field populated by LIFF JS before submit; empty on normal browser login #}
+            <input type="hidden" name="line_user_id" id="line_user_id_input">
 
             <div class="input-group">
                 <label for="username">ชื่อผู้ใช้งาน (Username) <span class="required">*</span></label>
@@ -209,6 +212,60 @@
     </div>
 
 </div>
+
+<!-- LINE LIFF SDK -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+(function () {
+    var LIFF_ID = "{{ liff_id }}";
+    var form = document.getElementById("login-form");
+    var submitBtn = form.querySelector("button[type='submit']");
+    var profileInput = document.getElementById("line_user_id_input");
+
+    // Block submit until LIFF profile is resolved (only inside LINE)
+    var liffReady = false;
+
+    form.addEventListener("submit", function (e) {
+        // Normal browser — allow submit immediately
+        if (!liff.isInClient()) return;
+        // LIFF but profile already loaded — allow
+        if (liffReady) return;
+        // LIFF but still loading — block and show feedback
+        e.preventDefault();
+        submitBtn.textContent = "กำลังโหลดข้อมูล LINE...";
+        submitBtn.disabled = true;
+    });
+
+    liff.init({ liffId: LIFF_ID })
+        .then(function () {
+            if (!liff.isInClient()) {
+                // Normal browser — nothing to link, unblock submit
+                liffReady = true;
+                return;
+            }
+            if (!liff.isLoggedIn()) {
+                // Force LINE login within LIFF context
+                liff.login();
+                return;
+            }
+            return liff.getProfile();
+        })
+        .then(function (profile) {
+            if (!profile) { liffReady = true; return; }
+            profileInput.value = profile.userId;
+            liffReady = true;
+            // Re-enable button in case user tried to submit early
+            submitBtn.disabled = false;
+            submitBtn.textContent = "เข้าสู่ระบบ";
+        })
+        .catch(function (err) {
+            console.warn("LIFF init skipped:", err);
+            liffReady = true; // Fail open — don't block the user
+            submitBtn.disabled = false;
+            submitBtn.textContent = "เข้าสู่ระบบ";
+        });
+}());
+</script>
 
 </body>
 </html>

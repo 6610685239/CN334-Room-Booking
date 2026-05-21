@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_datetime, parse_date
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 from .models import User, Room, Booking
 from django.http import JsonResponse
 from django.utils.timezone import localtime
@@ -29,6 +30,11 @@ def tu_login_view(request):
         }
         data = {"UserName": username, "PassWord": password}
 
+        # Accept LINE user ID from POST body (injected by LIFF JS) or URL param
+        line_user_id = (
+            request.POST.get("line_user_id") or request.GET.get("line_user_id") or ""
+        ).strip() or None
+
         try:
             response = requests.post(url, json=data, headers=headers)
             result = response.json()
@@ -47,12 +53,32 @@ def tu_login_view(request):
                 if created:
                     user.role = "Lecturer"
 
-                user.save()
+                # Link LINE account only when a fresh LINE user ID is provided
+                # and this user does not already have one linked.
+                if line_user_id and not user.line_user_id:
+                    user.line_user_id = line_user_id
+
+                try:
+                    user.save()
+                except IntegrityError:
+                    # Another account already holds this line_user_id — skip linking.
+                    user.line_user_id = None
+                    user.save()
+                    messages.warning(
+                        request,
+                        "LINE account นี้ถูกผูกกับบัญชีอื่นแล้ว ระบบจะเข้าสู่ระบบโดยไม่ผูก LINE",
+                    )
 
                 login(
                     request, user, backend="django.contrib.auth.backends.ModelBackend"
                 )
 
+                # LIFF flow: close the in-app browser and return to LINE chat
+                if line_user_id:
+                    return render(request, "bookings/liff_success.html", {
+                        "liff_id": settings.LIFF_ID,
+                        "display_name": user.first_name or user.username,
+                    })
                 return redirect("book_room")
             else:
                 messages.error(request, "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง")
@@ -60,9 +86,9 @@ def tu_login_view(request):
         except Exception as e:
             print(f"CRITICAL ERROR in Login: {e}")
             messages.error(request, "เกิดข้อผิดพลาดในการสร้างเซสชันเข้าสู่ระบบ")
-            return render(request, "bookings/login.html")
+            return render(request, "bookings/login.html", {"liff_id": settings.LIFF_ID})
 
-    return render(request, "bookings/login.html")
+    return render(request, "bookings/login.html", {"liff_id": settings.LIFF_ID})
 
 
 def logout_view(request):

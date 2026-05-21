@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ผูกบัญชีสำเร็จ</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: grid;
+            place-items: center;
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            max-width: 320px;
+            width: 90vw;
+        }
+        .icon { font-size: 56px; margin-bottom: 16px; }
+        h2 { margin: 0 0 8px; color: #1a1a1a; font-size: 20px; }
+        p  { margin: 0 0 24px; color: #666; font-size: 14px; line-height: 1.6; }
+        .spinner {
+            width: 24px; height: 24px;
+            border: 3px solid #eee;
+            border-top-color: #8B1A1A;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">✅</div>
+    <h2>ผูกบัญชีสำเร็จแล้ว!</h2>
+    <p>สวัสดี คุณ {{ display_name }}<br>กลับไปที่ LINE เพื่อเริ่มจองห้องได้เลยครับ</p>
+    <div class="spinner"></div>
+</div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+liff.init({ liffId: "{{ liff_id }}" })
+    .then(function () {
+        // Give user 1.5 seconds to read the success message before closing
+        setTimeout(function () {
+            liff.closeWindow();
+        }, 1500);
+    })
+    .catch(function () {
+        // Fallback if not in LIFF context (direct browser access)
+        document.querySelector(".spinner").style.display = "none";
+    });
+</script>
+</body>
+</html>
