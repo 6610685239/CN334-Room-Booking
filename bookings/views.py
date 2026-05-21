@@ -96,6 +96,18 @@ def create_booking_view(request):
             base_start_dt = parse_datetime(hidden_start)
             base_end_dt = parse_datetime(hidden_end)
 
+            if base_start_dt is None or base_end_dt is None:
+                messages.error(
+                    request, "รูปแบบวันที่/เวลาไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง"
+                )
+                return redirect("book_room")
+
+            if timezone.is_naive(base_start_dt):
+                base_start_dt = timezone.make_aware(base_start_dt)
+            if timezone.is_naive(base_end_dt):
+                base_end_dt = timezone.make_aware(base_end_dt)
+
+            now = timezone.now()
             created_bookings = []  # เก็บลิสต์การจองที่สร้างสำเร็จเพื่อเอาไปส่งอีเมล
             conflict_count = 0
 
@@ -103,6 +115,21 @@ def create_booking_view(request):
             # กรณี 1: จองแบบครั้งเดียว (Single Booking)
             # ---------------------------------------------------------
             if booking_type == "single":
+                # เช็คว่าเวลาที่จองผ่านมาแล้วหรือเปล่า
+                if base_start_dt <= now:
+                    messages.error(
+                        request,
+                        "ไม่สามารถจองเวลาที่ผ่านมาแล้วได้ กรุณาเลือกเวลาในอนาคต",
+                    )
+                    return render(
+                        request,
+                        "bookings/booking_form.html",
+                        {
+                            "rooms": rooms,
+                            "form_data": request.POST,
+                        },
+                    )
+
                 # เช็คคิวชน
                 conflict = Booking.objects.filter(
                     room=room,
@@ -165,6 +192,12 @@ def create_booking_view(request):
                         target_end = timezone.make_aware(
                             datetime.combine(current_date, base_end_dt.time())
                         )
+
+                        # ข้ามวัน/เวลาที่ผ่านมาแล้ว
+                        if target_start <= now:
+                            conflict_count += 1
+                            current_date += timedelta(days=1)
+                            continue
 
                         conflict = Booking.objects.filter(
                             room=room,
