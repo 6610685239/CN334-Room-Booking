@@ -14,6 +14,3 @@ COPY requirements.txt /code/
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /code/
-
-RUN chmod +x /code/entrypoint.sh
-ENTRYPOINT ["/code/entrypoint.sh"]
