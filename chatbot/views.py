@@ -7,6 +7,7 @@ from datetime import datetime
 
 import requests as http_client
 from django.conf import settings
+from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
@@ -121,6 +122,9 @@ def create_booking_service(user: User, data: dict) -> dict:
     if start_dt >= end_dt:
         return {"success": False, "message": "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น", "booking": None}
 
+    if start_dt <= timezone.now():
+        return {"success": False, "message": "ไม่สามารถจองห้องย้อนหลังได้ค่ะ กรุณาระบุวันและเวลาในอนาคต", "booking": None}
+
     # ── Conflict check ────────────────────────────────────────────────────────
     conflict = Booking.objects.filter(
         room=room,
@@ -198,6 +202,28 @@ def _handle_message_event(event: dict) -> None:
             f"สถานะ: รออนุมัติจาก Admin\n"
             f"(เลขที่คำขอ: #{bk.id})"
         )
+
+        # ── Email notification to admins ──────────────────────────────────
+        admin_emails = list(
+            User.objects.filter(role="Admin")
+            .exclude(email="")
+            .values_list("email", flat=True)
+        )
+        if admin_emails:
+            display_name = user.first_name or user.username
+            send_mail(
+                subject=f"[แจ้งเตือน] คำขอจองห้องใหม่จาก LINE: {bk.room.room_id}",
+                message=(
+                    f"อาจารย์ {display_name} ได้ส่งคำขอจองห้องผ่าน LINE Bot\n\n"
+                    f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
+                    f"วันที่: {start_fmt} – {end_fmt} น.\n"
+                    f"เลขที่คำขอ: #{bk.id}\n\n"
+                    f"กรุณาตรวจสอบและอนุมัติที่หน้า Dashboard"
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=admin_emails,
+                fail_silently=True,
+            )
     else:
         reply_text = (
             f"❌ ไม่สามารถจองห้องได้ค่ะ\n"
