@@ -1,4 +1,4 @@
-# ชื่อโปรเจกต์ - CN334 HW1
+# ชื่อโปรเจกต์ - Roommasat - CN334
 
 ## ข้อมูลกลุ่ม
 
@@ -16,7 +16,7 @@
 |---|---|
 | 6610685239 | ระบบ bookings, email notification, calendar, database, fixtures|
 | 6610685056 | admin dashboard , admin report, รายงาน |
-| 6610685098 | bug fix, tester |
+| 6610685098 | bug fix, tester, merge branch|
 | 6610685122 | dashboard , ระบบ line chatbot  |
 | 6610685205 | templates, CSS, frontend, responsive design |
 
