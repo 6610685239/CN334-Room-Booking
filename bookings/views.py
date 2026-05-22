@@ -66,7 +66,7 @@ def tu_login_view(request):
                     request, user, backend="django.contrib.auth.backends.ModelBackend"
                 )
 
-                return redirect("book_room")
+                return redirect("dashboard")
             else:
                 messages.error(request, "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง")
 
