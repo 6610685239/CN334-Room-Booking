@@ -1,6 +1,6 @@
 import requests
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, authenticate
 from django.conf import settings
 from django.core.mail import send_mail
 from django.contrib import messages
@@ -23,6 +23,29 @@ def tu_login_view(request):
         username = request.POST.get("username")
         password = request.POST.get("password")
 
+        local_user = authenticate(request, username=username, password=password)
+        if local_user is not None:
+            if local_user.is_superuser:
+                if getattr(local_user, "role", "") != "Admin":
+                    local_user.role = "Admin"
+                    local_user.save()
+                login(
+                    request,
+                    local_user,
+                    backend="django.contrib.auth.backends.ModelBackend",
+                )
+                return redirect("dashboard")
+            else:
+                if getattr(local_user, "role", "") != "Lecturer":
+                    local_user.role = "Lecturer"
+                    local_user.save()
+                login(
+                    request,
+                    local_user,
+                    backend="django.contrib.auth.backends.ModelBackend",
+                )
+                return redirect("book_room")
+
         url = "https://restapi.tu.ac.th/api/v1/auth/ad/verify"
         headers = {
             "Content-Type": "application/json",
@@ -38,17 +61,26 @@ def tu_login_view(request):
         try:
             response = requests.post(url, json=data, headers=headers, timeout=10)
         except requests.exceptions.Timeout:
-            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ (หมดเวลา) กรุณาลองใหม่อีกครั้ง")
+            messages.error(
+                request,
+                "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ (หมดเวลา) กรุณาลองใหม่อีกครั้ง",
+            )
             return render(request, "bookings/login.html")
         except requests.exceptions.ConnectionError:
-            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง")
+            messages.error(
+                request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง"
+            )
             return render(request, "bookings/login.html")
 
         try:
             result = response.json()
         except ValueError:
-            print(f"TU API returned non-JSON response: {response.status_code} {response.text[:200]}")
-            messages.error(request, "ระบบยืนยันตัวตนตอบสนองผิดปกติ กรุณาลองใหม่อีกครั้ง")
+            print(
+                f"TU API returned non-JSON response: {response.status_code} {response.text[:200]}"
+            )
+            messages.error(
+                request, "ระบบยืนยันตัวตนตอบสนองผิดปกติ กรุณาลองใหม่อีกครั้ง"
+            )
             return render(request, "bookings/login.html")
 
         try:

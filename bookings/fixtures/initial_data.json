@@ -4,7 +4,7 @@
   "pk": 1,
   "fields": {
     "password": "",
-    "last_login": "2026-05-21T12:28:17.913Z",
+    "last_login": "2026-05-22T12:15:23.921Z",
     "is_superuser": false,
     "username": "6610685239",
     "first_name": "ปรัญชัย ติ้มขลิบ",
@@ -14,6 +14,7 @@
     "is_active": true,
     "date_joined": "2026-04-25T19:38:34Z",
     "role": "Lecturer",
+    "line_user_id": null,
     "groups": [],
     "user_permissions": []
   }
@@ -23,7 +24,7 @@
   "pk": 2,
   "fields": {
     "password": "pbkdf2_sha256$600000$zzk9xrOJrLzRNYeyecQtEo$x3TDYe8AHlg1uMsWn9eSVc2RVZ92r5IzP2z47QmrTOk=",
-    "last_login": "2026-04-29T03:09:42.759Z",
+    "last_login": "2026-05-22T12:13:05.239Z",
     "is_superuser": true,
     "username": "admin",
     "first_name": "",
@@ -33,6 +34,27 @@
     "is_active": true,
     "date_joined": "2026-04-25T19:39:55Z",
     "role": "Admin",
+    "line_user_id": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "bookings.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$yt9SkLpGfp04qhsbX5Csa9$yTZNPwG22TH13W3ZMFiIu3TQp3BHcv/N65pRQFwHRv8=",
+    "last_login": "2026-05-22T12:15:50.172Z",
+    "is_superuser": false,
+    "username": "testuser",
+    "first_name": "อาจารย์ สมชาย",
+    "last_name": "",
+    "email": "test@tu.ac.th",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-22T12:11:07.712Z",
+    "role": "Lecturer",
+    "line_user_id": null,
     "groups": [],
     "user_permissions": []
   }
@@ -561,6 +583,91 @@
     "end_time": "2026-06-30T09:00:00Z",
     "status": "Pending",
     "created_at": "2026-05-21T12:55:55.963Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 29,
+  "fields": {
+    "user": 4,
+    "room": "408-1",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "ติวเข้ม",
+    "start_time": "2026-05-27T04:00:00Z",
+    "end_time": "2026-05-27T07:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:14:49.461Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 30,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-07T02:00:00Z",
+    "end_time": "2026-10-07T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.306Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 31,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-14T02:00:00Z",
+    "end_time": "2026-10-14T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.309Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 32,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-21T02:00:00Z",
+    "end_time": "2026-10-21T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.311Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 33,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-28T02:00:00Z",
+    "end_time": "2026-10-28T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.313Z"
   }
 }
 ]
