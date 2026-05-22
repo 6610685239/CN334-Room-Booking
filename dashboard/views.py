@@ -12,39 +12,51 @@ def dashboard_view(request):
     now = timezone.now()
     if request.user.role == "Admin":
         bookings = Booking.objects.filter(status="Pending").order_by("start_time")
-        pending_count   = bookings.count()
-        total_rooms     = Room.objects.filter(is_active=True).count()
-        approved_today  = Booking.objects.filter(
+        pending_count = bookings.count()
+        total_rooms = Room.objects.filter(is_active=True).count()
+        approved_today = Booking.objects.filter(
             status="Approved", start_time__date=now.date()
         ).count()
-        total_today     = Booking.objects.filter(
-            start_time__date=now.date()
-        ).exclude(status__in=["Cancelled", "Rejected"]).count()
-        return render(request, "dashboard/admin_dashboard.html", {
-            "bookings":       bookings,
-            "now":            now,
-            "pending_count":  pending_count,
-            "total_rooms":    total_rooms,
-            "approved_today": approved_today,
-            "total_today":    total_today,
-        })
+        total_today = (
+            Booking.objects.filter(start_time__date=now.date())
+            .exclude(status__in=["Cancelled", "Rejected"])
+            .count()
+        )
+        return render(
+            request,
+            "dashboard/admin_dashboard.html",
+            {
+                "bookings": bookings,
+                "now": now,
+                "pending_count": pending_count,
+                "total_rooms": total_rooms,
+                "approved_today": approved_today,
+                "total_today": total_today,
+            },
+        )
     else:
         all_bookings = Booking.objects.filter(user=request.user)
-        pending_count  = all_bookings.filter(status="Pending").count()
+        pending_count = all_bookings.filter(status="Pending").count()
         approved_count = all_bookings.filter(status="Approved").count()
-        month_count    = all_bookings.filter(
+        month_count = all_bookings.filter(
             start_time__year=now.year, start_time__month=now.month
         ).count()
-        upcoming = all_bookings.filter(
-            start_time__gte=now
-        ).exclude(status__in=["Cancelled", "Rejected"]).order_by("start_time")[:5]
-        return render(request, "dashboard/user_dashboard.html", {
-            "now": now,
-            "pending_count":  pending_count,
-            "approved_count": approved_count,
-            "month_count":    month_count,
-            "upcoming":       upcoming,
-        })
+        upcoming = (
+            all_bookings.filter(start_time__gte=now)
+            .exclude(status__in=["Cancelled", "Rejected"])
+            .order_by("start_time")
+        )
+        return render(
+            request,
+            "dashboard/user_dashboard.html",
+            {
+                "now": now,
+                "pending_count": pending_count,
+                "approved_count": approved_count,
+                "month_count": month_count,
+                "upcoming": upcoming,
+            },
+        )
 
 
 @login_required
@@ -79,7 +91,9 @@ def update_status(request, booking_id, new_status):
                     fail_silently=True,
                 )
 
-            messages.success(request, f"เปลี่ยนสถานะการจองเป็น {new_status} เรียบร้อยแล้ว")
+            messages.success(
+                request, f"เปลี่ยนสถานะการจองเป็น {new_status} เรียบร้อยแล้ว"
+            )
     except Booking.DoesNotExist:
         messages.error(request, "ไม่พบรายการจองดังกล่าว")
 
@@ -118,7 +132,9 @@ def cancel_booking(request, booking_id):
 
             messages.success(request, "ยกเลิกการจองเรียบร้อยแล้ว")
         else:
-            messages.error(request, "ไม่สามารถยกเลิกการจองที่ถึงกำหนดเวลาหรือผ่านไปแล้วได้")
+            messages.error(
+                request, "ไม่สามารถยกเลิกการจองที่ถึงกำหนดเวลาหรือผ่านไปแล้วได้"
+            )
 
     except Booking.DoesNotExist:
         messages.error(request, "ไม่พบรายการจอง หรือคุณไม่มีสิทธิ์ยกเลิกรายการนี้")
