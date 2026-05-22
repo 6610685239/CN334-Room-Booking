@@ -17,7 +17,10 @@ from datetime import datetime, timedelta
 
 def tu_login_view(request):
     if request.user.is_authenticated:
-        return redirect("book_room")
+        return render(request, "bookings/liff_success.html", {
+            "liff_id": settings.LIFF_ID,
+            "display_name": request.user.first_name or request.user.username,
+        })
 
     if request.method == "POST":
         username = request.POST.get("username")

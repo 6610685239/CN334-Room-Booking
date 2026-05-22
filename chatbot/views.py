@@ -58,6 +58,33 @@ def _reply(reply_token: str, text: str) -> None:
         logger.exception("Failed to send LINE reply (token=%.20s…)", reply_token)
 
 
+def _reply_link_button(reply_token: str, body_text: str, button_label: str, url: str) -> None:
+    """Send a LINE Button Template with a single URI action."""
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.LINE_CHANNEL_ACCESS_TOKEN}",
+    }
+    payload = {
+        "replyToken": reply_token,
+        "messages": [{
+            "type": "template",
+            "altText": body_text,
+            "template": {
+                "type": "buttons",
+                "text": body_text,
+                "actions": [{"type": "uri", "label": button_label, "uri": url}],
+            },
+        }],
+    }
+    try:
+        resp = http_client.post(
+            _LINE_REPLY_URL, json=payload, headers=headers, timeout=5
+        )
+        resp.raise_for_status()
+    except Exception:
+        logger.exception("Failed to send LINE button reply (token=%.20s…)", reply_token)
+
+
 def push_line_message(line_user_id: str, text: str) -> None:
     """Send a push message to a LINE user (no reply token needed)."""
     if not line_user_id:
@@ -348,9 +375,11 @@ def _handle_message_event(event: dict) -> None:
     try:
         user = User.objects.get(line_user_id=line_user_id)
     except User.DoesNotExist:
-        _reply(
+        _reply_link_button(
             reply_token,
-            f"กรุณาเข้าสู่ระบบเพื่อผูกบัญชีก่อนเริ่มใช้งานครับ:\n{_LIFF_LOGIN_URL}",
+            body_text="กรุณาเชื่อมบัญชี LINE กับระบบจองห้องก่อนเริ่มใช้งานค่ะ",
+            button_label="เชื่อมบัญชีที่นี่",
+            url=_LIFF_LOGIN_URL,
         )
         return
 

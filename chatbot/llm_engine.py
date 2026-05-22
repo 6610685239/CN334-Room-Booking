@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from datetime import date
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -16,7 +16,7 @@ _CACHE_TIMEOUT = 5 * 60  # 5 minutes
 _CACHE_KEY_TEMPLATE = "chatbot:history:{}"
 
 _SYSTEM_INSTRUCTION_TEMPLATE = """
-วันที่ปัจจุบัน: {today}
+วันและเวลาปัจจุบัน: {today} เวลา {now_time} น.
 คุณคือ "AI ผู้ช่วยจองห้อง" ประจำแอปพลิเคชัน Roomasat ของภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์ (ECE)
 ห้ามเรียกผู้จองว่าลูกค้า ให้เรียกว่า "อาจารย์" เท่านั้น
 
@@ -198,9 +198,11 @@ def process_booking_intent(line_user_id: str, current_message: str) -> dict:
     # Append the new user turn before calling the model
     history.append({"role": "user", "parts": [current_message]})
 
-    today = date.today().strftime("%Y-%m-%d")
+    now = datetime.now()
+    today    = now.strftime("%Y-%m-%d")
+    now_time = now.strftime("%H:%M")
     config = types.GenerateContentConfig(
-        system_instruction=_SYSTEM_INSTRUCTION_TEMPLATE.format(today=today),
+        system_instruction=_SYSTEM_INSTRUCTION_TEMPLATE.format(today=today, now_time=now_time),
         response_mime_type="application/json",
         temperature=0.1,
     )
