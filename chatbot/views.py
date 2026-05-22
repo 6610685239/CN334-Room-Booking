@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.timezone import localtime
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
@@ -209,6 +210,129 @@ def create_booking_service(user: User, data: dict) -> dict:
             "booking_count": len(created), "conflict_count": conflict_count}
 
 
+# ── Availability checker ──────────────────────────────────────────────────────
+
+_ALL_ROOMS = [
+    ("406-3",   "ห้องประชุม 1"),
+    ("408-1",   "ห้องประชุม 3"),
+    ("406-5",   "ห้องประชุม 2"),
+    ("408-2/1", "ห้องบรรยาย 1"),
+    ("408-2/2", "ห้องบรรยาย 2"),
+]
+
+
+def check_availability_service(data: dict) -> str:
+    """Query DB for booked slots and return a formatted Thai-language reply."""
+    from collections import defaultdict
+
+    check_date_str = (data.get("check_date") or "").strip()
+    check_room     = (data.get("check_room") or "").strip() or None
+    check_start    = (data.get("check_start") or "").strip() or None
+    check_end      = (data.get("check_end") or "").strip() or None
+
+    if not check_date_str:
+        return "กรุณาระบุวันที่ที่ต้องการตรวจสอบค่ะ"
+
+    try:
+        target_date = datetime.strptime(check_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        return "รูปแบบวันที่ไม่ถูกต้อง"
+
+    date_fmt = target_date.strftime("%d/%m/%Y")
+
+    # ── Specific time slot check for one room ─────────────────────────────────
+    if check_room and check_start and check_end:
+        try:
+            s_dt = timezone.make_aware(datetime.strptime(f"{check_date_str} {check_start}", "%Y-%m-%d %H:%M"))
+            e_dt = timezone.make_aware(datetime.strptime(f"{check_date_str} {check_end}",   "%Y-%m-%d %H:%M"))
+        except ValueError:
+            return "รูปแบบเวลาไม่ถูกต้อง"
+
+        room_name = next((n for r, n in _ALL_ROOMS if r == check_room), check_room)
+        conflict = Booking.objects.filter(
+            room__room_id=check_room,
+            status__in=["Pending", "Approved"],
+            start_time__lt=e_dt,
+            end_time__gt=s_dt,
+        ).exists()
+
+        if conflict:
+            return (f"❌ ห้อง {check_room} ({room_name})\n"
+                    f"ช่วง {check_start}–{check_end} น. วันที่ {date_fmt}\n"
+                    f"ถูกจองแล้วค่ะ กรุณาเลือกเวลาอื่น")
+        return (f"✅ ห้อง {check_room} ({room_name})\n"
+                f"ช่วง {check_start}–{check_end} น. วันที่ {date_fmt}\n"
+                f"ว่างอยู่ค่ะ อาจารย์ต้องการจองเลยไหมคะ?")
+
+    # ── Show all booked slots for requested rooms ─────────────────────────────
+    qs = Booking.objects.filter(
+        start_time__date=target_date,
+        status__in=["Pending", "Approved"],
+    ).select_related("room").order_by("room__room_id", "start_time")
+
+    if check_room:
+        qs = qs.filter(room__room_id=check_room)
+
+    booked: dict[str, list[str]] = defaultdict(list)
+    for b in qs:
+        s = localtime(b.start_time).strftime("%H:%M")
+        e = localtime(b.end_time).strftime("%H:%M")
+        booked[b.room.room_id].append(f"{s}–{e} น.")
+
+    target_rooms = [(r, n) for r, n in _ALL_ROOMS if not check_room or r == check_room]
+    if not target_rooms:
+        return f"ไม่พบห้อง {check_room} ในระบบค่ะ"
+
+    lines = [f"📅 ตารางห้อง วันที่ {date_fmt}\n"]
+    for room_id, room_name in target_rooms:
+        if room_id in booked:
+            slots = ", ".join(booked[room_id])
+            lines.append(f"🔴 {room_id} – {room_name}\n   จองแล้ว: {slots}")
+        else:
+            lines.append(f"🟢 {room_id} – {room_name}\n   ว่างทั้งวัน")
+
+    return "\n\n".join(lines)
+
+
+# ── My-bookings service ───────────────────────────────────────────────────────
+
+_STATUS_ICON = {
+    "Pending":   "⏳",
+    "Approved":  "✅",
+    "Rejected":  "❌",
+    "Cancelled": "🚫",
+}
+
+
+def my_bookings_service(user: User) -> str:
+    """Return a formatted list of the user's upcoming bookings."""
+    now = timezone.now()
+    bookings = (
+        Booking.objects.filter(user=user, start_time__gte=now)
+        .exclude(status__in=["Cancelled", "Rejected"])
+        .select_related("room")
+        .order_by("start_time")[:5]
+    )
+
+    if not bookings:
+        return "อาจารย์ยังไม่มีการจองที่กำลังจะมาถึงค่ะ\nสามารถจองห้องได้เลยโดยบอกฉันได้เลยค่ะ 😊"
+
+    lines = [f"📋 การจองที่กำลังจะมาถึง ({len(bookings)} รายการ)\n"]
+    for i, bk in enumerate(bookings, 1):
+        icon = _STATUS_ICON.get(bk.status, "•")
+        start = localtime(bk.start_time)
+        end   = localtime(bk.end_time)
+        date_str = start.strftime("%d/%m/%Y")
+        time_str = f"{start.strftime('%H:%M')}–{end.strftime('%H:%M')} น."
+        lines.append(
+            f"{i}. {icon} {bk.status}\n"
+            f"   ห้อง {bk.room.room_id} – {bk.room.name}\n"
+            f"   {date_str}  {time_str}"
+        )
+
+    return "\n\n".join(lines)
+
+
 # ── Event handler (pure logic, no HTTP concerns) ──────────────────────────────
 
 def _handle_message_event(event: dict) -> None:
@@ -233,7 +357,18 @@ def _handle_message_event(event: dict) -> None:
     # ── Step 2: run LLM intent extraction (multi-turn) ───────────────────────
     result = process_booking_intent(line_user_id, text)
 
-    # ── Step 3: conversation still needs more information ────────────────────
+    # ── Step 3: availability check ────────────────────────────────────────────
+    if result.get("action") == "check" and result.get("check_ready"):
+        avail_text = check_availability_service(result.get("extracted_data", {}))
+        _reply(reply_token, avail_text)
+        return
+
+    # ── Step 3b: my bookings ──────────────────────────────────────────────────
+    if result.get("action") == "my_bookings" and result.get("my_bookings_ready"):
+        _reply(reply_token, my_bookings_service(user))
+        return
+
+    # ── Step 4: conversation still needs more information ────────────────────
     if not result.get("is_complete"):
         _reply(
             reply_token,
@@ -241,7 +376,7 @@ def _handle_message_event(event: dict) -> None:
         )
         return
 
-    # ── Step 4: all slots collected — attempt to create the booking ──────────
+    # ── Step 5: all slots collected — attempt to create the booking ──────────
     extracted = result.get("extracted_data", {})
     booking_result = create_booking_service(user, extracted)
 
@@ -249,7 +384,6 @@ def _handle_message_event(event: dict) -> None:
         bk            = booking_result["booking"]
         booking_count = booking_result.get("booking_count", 1)
         conflict_skip = booking_result.get("conflict_count", 0)
-        from django.utils.timezone import localtime
         start_fmt = localtime(bk.start_time).strftime("%d/%m/%Y %H:%M")
         end_fmt   = localtime(bk.end_time).strftime("%H:%M")
 
