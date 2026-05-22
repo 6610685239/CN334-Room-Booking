@@ -3,7 +3,7 @@ import hashlib
 import hmac
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests as http_client
 from django.conf import settings
@@ -82,76 +82,131 @@ def push_line_message(line_user_id: str, text: str) -> None:
 
 def create_booking_service(user: User, data: dict) -> dict:
     """
-    Create a Booking from LLM-extracted data.
+    Create one or more Bookings from LLM-extracted data.
 
-    Expected keys in data:
-        room       – room_id string e.g. "406-3"
-        date       – "YYYY-MM-DD"
-        start_time – "HH:MM"
-        end_time   – "HH:MM"
-
-    Returns {"success": bool, "message": str, "booking": Booking|None}.
+    Returns {"success": bool, "message": str, "booking": Booking|None, "booking_count": int, "conflict_count": int}.
     """
-    room_id    = (data.get("room") or "").strip()
-    date_str   = (data.get("date") or "").strip()
-    start_str  = (data.get("start_time") or "").strip()
-    end_str    = (data.get("end_time") or "").strip()
+    # ── Base fields ───────────────────────────────────────────────────────────
+    booking_type  = (data.get("booking_type") or "").strip()
+    room_id       = (data.get("room") or "").strip()
+    purpose_type  = (data.get("purpose_type") or "").strip()
+    start_str     = (data.get("start_time") or "").strip()
+    end_str       = (data.get("end_time") or "").strip()
 
-    if not all([room_id, date_str, start_str, end_str]):
-        missing = [k for k, v in {"ห้อง": room_id, "วันที่": date_str,
-                                   "เวลาเริ่ม": start_str, "เวลาสิ้นสุด": end_str}.items() if not v]
-        return {"success": False, "message": f"ข้อมูลไม่ครบ: {', '.join(missing)}", "booking": None}
+    _fail = lambda msg: {"success": False, "message": msg, "booking": None, "booking_count": 0, "conflict_count": 0}
 
-    # ── Resolve room ─────────────────────────────────────────────────────────
+    if not all([booking_type, room_id, purpose_type, start_str, end_str]):
+        return _fail("ข้อมูลพื้นฐานไม่ครบ (ห้อง / ประเภทการจอง / วัตถุประสงค์ / เวลา)")
+
+    if booking_type not in ("single", "recurring"):
+        return _fail("ประเภทการจองไม่ถูกต้อง")
+
+    if purpose_type not in ("Teaching", "Training"):
+        return _fail("วัตถุประสงค์ไม่ถูกต้อง")
+
+    # ── Purpose-specific fields ───────────────────────────────────────────────
+    purpose_kwargs: dict = {"purpose_type": purpose_type}
+    if purpose_type == "Teaching":
+        course_code = (data.get("course_code") or "").strip()
+        course_name = (data.get("course_name") or "").strip()
+        program     = (data.get("program") or "").strip()
+        if not all([course_code, course_name, program]):
+            return _fail("กรุณาระบุรหัสวิชา ชื่อวิชา และหลักสูตรให้ครบ")
+        purpose_kwargs.update({"course_code": course_code, "course_name": course_name, "program": program})
+    else:
+        training_topic = (data.get("training_topic") or "").strip()
+        if not training_topic:
+            return _fail("กรุณาระบุชื่อเรื่องอบรม/ติว")
+        purpose_kwargs["training_topic"] = training_topic
+
+    # ── Resolve room ──────────────────────────────────────────────────────────
     try:
         room = Room.objects.get(room_id=room_id, is_active=True)
     except Room.DoesNotExist:
-        return {"success": False, "message": f"ไม่พบห้อง {room_id} หรือห้องปิดใช้งานอยู่", "booking": None}
+        return _fail(f"ไม่พบห้อง {room_id} หรือห้องปิดใช้งานอยู่")
 
-    # ── Parse to timezone-aware datetimes ────────────────────────────────────
-    try:
-        start_dt = timezone.make_aware(
-            datetime.strptime(f"{date_str} {start_str}", "%Y-%m-%d %H:%M")
-        )
-        end_dt = timezone.make_aware(
-            datetime.strptime(f"{date_str} {end_str}", "%Y-%m-%d %H:%M")
-        )
-    except ValueError:
-        return {"success": False, "message": "รูปแบบวันที่หรือเวลาไม่ถูกต้อง", "booking": None}
+    # ── Build list of target dates ────────────────────────────────────────────
+    if booking_type == "single":
+        date_str = (data.get("date") or "").strip()
+        if not date_str:
+            return _fail("กรุณาระบุวันที่")
+        try:
+            target_dates = [datetime.strptime(date_str, "%Y-%m-%d").date()]
+        except ValueError:
+            return _fail("รูปแบบวันที่ไม่ถูกต้อง")
+    else:
+        start_date_str = (data.get("start_date") or "").strip()
+        end_date_str   = (data.get("end_date") or "").strip()
+        days_of_week   = data.get("days_of_week")
 
-    if start_dt >= end_dt:
-        return {"success": False, "message": "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น", "booking": None}
+        if not all([start_date_str, end_date_str, days_of_week is not None]):
+            return _fail("กรุณาระบุวันที่เริ่ม วันที่สิ้นสุด และวันในสัปดาห์")
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date   = datetime.strptime(end_date_str,   "%Y-%m-%d").date()
+        except ValueError:
+            return _fail("รูปแบบวันที่ไม่ถูกต้อง")
 
-    if start_dt <= timezone.now():
-        return {"success": False, "message": "ไม่สามารถจองห้องย้อนหลังได้ค่ะ กรุณาระบุวันและเวลาในอนาคต", "booking": None}
+        if start_date > end_date:
+            return _fail("วันที่เริ่มต้องไม่เกินวันสิ้นสุด")
 
-    # ── Conflict check ────────────────────────────────────────────────────────
-    conflict = Booking.objects.filter(
-        room=room,
-        status__in=["Pending", "Approved"],
-        start_time__lt=end_dt,
-        end_time__gt=start_dt,
-    ).exists()
+        target_dates = []
+        cur = start_date
+        while cur <= end_date:
+            if cur.weekday() in days_of_week:
+                target_dates.append(cur)
+            cur += timedelta(days=1)
 
-    if conflict:
-        return {"success": False, "message": f"ห้อง {room.name} ถูกจองในช่วงเวลานั้นแล้ว กรุณาเลือกเวลาอื่น", "booking": None}
+        if not target_dates:
+            return _fail("ไม่พบวันที่ตรงเงื่อนไข กรุณาตรวจสอบช่วงวันที่และวันในสัปดาห์")
 
-    # ── Create booking ────────────────────────────────────────────────────────
-    try:
-        booking = Booking.objects.create(
-            user=user,
-            room=room,
-            purpose_type="Training",
-            training_topic="จองผ่าน LINE Bot (Roomasat)",
-            start_time=start_dt,
-            end_time=end_dt,
-            status="Pending",
-        )
-        logger.info("Booking #%s created via LINE bot — user=%s room=%s", booking.id, user.username, room_id)
-        return {"success": True, "message": "จองสำเร็จ", "booking": booking}
-    except Exception:
-        logger.exception("create_booking_service failed — user=%s data=%s", user.username, data)
-        return {"success": False, "message": "เกิดข้อผิดพลาดในการบันทึกการจอง", "booking": None}
+    # ── Create bookings ───────────────────────────────────────────────────────
+    created: list[Booking] = []
+    conflict_count = 0
+
+    for target_date in target_dates:
+        try:
+            start_dt = timezone.make_aware(datetime.strptime(f"{target_date} {start_str}", "%Y-%m-%d %H:%M"))
+            end_dt   = timezone.make_aware(datetime.strptime(f"{target_date} {end_str}",   "%Y-%m-%d %H:%M"))
+        except ValueError:
+            return _fail("รูปแบบเวลาไม่ถูกต้อง")
+
+        if start_dt >= end_dt:
+            return _fail("เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น")
+
+        if start_dt <= timezone.now():
+            if booking_type == "single":
+                return _fail("ไม่สามารถจองห้องย้อนหลังได้ค่ะ กรุณาระบุวันและเวลาในอนาคต")
+            conflict_count += 1
+            continue
+
+        conflict = Booking.objects.filter(
+            room=room, status__in=["Pending", "Approved"],
+            start_time__lt=end_dt, end_time__gt=start_dt,
+        ).exists()
+
+        if conflict:
+            conflict_count += 1
+            continue
+
+        try:
+            bk = Booking.objects.create(
+                user=user, room=room, start_time=start_dt, end_time=end_dt,
+                status="Pending", **purpose_kwargs,
+            )
+            created.append(bk)
+            logger.info("Booking #%s created via LINE — user=%s room=%s", bk.id, user.username, room_id)
+        except Exception:
+            logger.exception("create_booking_service failed — user=%s data=%s", user.username, data)
+
+    if not created:
+        msg = (f"ห้อง {room.name} ถูกจองในช่วงเวลานั้นแล้ว กรุณาเลือกเวลาอื่น"
+               if booking_type == "single"
+               else "ไม่สามารถสร้างการจองได้เลย เนื่องจากทุกวันมีคิวชนหรือเวลาผ่านไปแล้ว")
+        return _fail(msg)
+
+    return {"success": True, "message": "จองสำเร็จ", "booking": created[0],
+            "booking_count": len(created), "conflict_count": conflict_count}
 
 
 # ── Event handler (pure logic, no HTTP concerns) ──────────────────────────────
@@ -191,17 +246,30 @@ def _handle_message_event(event: dict) -> None:
     booking_result = create_booking_service(user, extracted)
 
     if booking_result["success"]:
-        bk = booking_result["booking"]
+        bk            = booking_result["booking"]
+        booking_count = booking_result.get("booking_count", 1)
+        conflict_skip = booking_result.get("conflict_count", 0)
         from django.utils.timezone import localtime
         start_fmt = localtime(bk.start_time).strftime("%d/%m/%Y %H:%M")
         end_fmt   = localtime(bk.end_time).strftime("%H:%M")
-        reply_text = (
-            f"✅ ส่งคำขอจองห้องสำเร็จแล้วค่ะ!\n"
-            f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
-            f"วันที่: {start_fmt} – {end_fmt} น.\n"
-            f"สถานะ: รออนุมัติจาก Admin\n"
-            f"(เลขที่คำขอ: #{bk.id})"
-        )
+
+        if booking_count == 1:
+            reply_text = (
+                f"✅ ส่งคำขอจองห้องสำเร็จแล้วค่ะ!\n"
+                f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
+                f"วันที่: {start_fmt} – {end_fmt} น.\n"
+                f"สถานะ: รออนุมัติจาก Admin\n"
+                f"(เลขที่คำขอ: #{bk.id})"
+            )
+        else:
+            skip_note = f"\n(ข้ามคิวชน {conflict_skip} วัน)" if conflict_skip else ""
+            reply_text = (
+                f"✅ ส่งคำขอจองห้องต่อเนื่องสำเร็จแล้วค่ะ!\n"
+                f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
+                f"เวลา: {start_fmt.split()[1]} – {end_fmt} น.\n"
+                f"จำนวน: {booking_count} รายการ{skip_note}\n"
+                f"สถานะ: รออนุมัติจาก Admin"
+            )
 
         # ── Email notification to admins ──────────────────────────────────
         admin_emails = list(
@@ -211,13 +279,13 @@ def _handle_message_event(event: dict) -> None:
         )
         if admin_emails:
             display_name = user.first_name or user.username
+            count_note = f"จำนวน {booking_count} รายการ " if booking_count > 1 else ""
             send_mail(
                 subject=f"[แจ้งเตือน] คำขอจองห้องใหม่จาก LINE: {bk.room.room_id}",
                 message=(
                     f"อาจารย์ {display_name} ได้ส่งคำขอจองห้องผ่าน LINE Bot\n\n"
                     f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
-                    f"วันที่: {start_fmt} – {end_fmt} น.\n"
-                    f"เลขที่คำขอ: #{bk.id}\n\n"
+                    f"{count_note}เริ่ม: {start_fmt} – {end_fmt} น.\n\n"
                     f"กรุณาตรวจสอบและอนุมัติที่หน้า Dashboard"
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
