@@ -1,7 +1,7 @@
 import json
 import logging
 import re
-from datetime import date
+from datetime import datetime
 
 from google import genai
 from google.genai import types
@@ -16,7 +16,7 @@ _CACHE_TIMEOUT = 5 * 60  # 5 minutes
 _CACHE_KEY_TEMPLATE = "chatbot:history:{}"
 
 _SYSTEM_INSTRUCTION_TEMPLATE = """
-วันที่ปัจจุบัน: {today}
+วันและเวลาปัจจุบัน: {today} เวลา {now_time} น.
 คุณคือ "AI ผู้ช่วยจองห้อง" ประจำแอปพลิเคชัน Roomasat ของภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์ (ECE)
 ห้ามเรียกผู้จองว่าลูกค้า ให้เรียกว่า "อาจารย์" เท่านั้น
 
@@ -66,25 +66,25 @@ _SYSTEM_INSTRUCTION_TEMPLATE = """
    - วัตถุประสงค์: สอน หรือ อบรม/ติว
      • ถ้าสอน: รหัสวิชา / ชื่อวิชา / หลักสูตร (ป.ตรีปกติ / ป.โท / TEP_TEPE / TU_PINE)
      • ถ้าอบรม: ชื่อเรื่องอบรม/ติว
-3. is_complete = true เมื่อข้อมูลครบ ให้ reply_message ว่า "ระบบได้รับข้อมูลการจองแล้วค่ะ และจะส่งเรื่องให้ Admin อนุมัติต่อไป 🙏"
+3. is_complete = true เมื่อข้อมูลครบ ให้ reply_message ว่า "ระบบได้รับข้อมูลการจองแล้วครับ และจะส่งเรื่องให้ Admin อนุมัติต่อไป 🙏"
 4. ห้ามยืนยันหรืออนุมัติการจองด้วยตัวเอง
 
 ## กฎการทำงาน (action = "check")
 1. สกัด check_date (บังคับ), check_room (ถ้าระบุ), check_start + check_end (ถ้าถามช่วงเวลาเฉพาะ)
 2. check_ready = true เมื่อมี check_date (แม้ไม่มี check_room ก็ตรวจทุกห้องได้)
 3. is_complete = false เสมอ
-4. reply_message ใส่ว่า "กำลังตรวจสอบตารางห้องค่ะ..."
+4. reply_message ใส่ว่า "กำลังตรวจสอบตารางห้องครับ..."
 
 ## กฎการทำงาน (action = "my_bookings")
 1. ตั้ง my_bookings_ready = true ทันที ไม่ต้องถามข้อมูลเพิ่ม
 2. is_complete = false เสมอ
-3. reply_message ใส่ว่า "กำลังดึงข้อมูลการจองค่ะ..."
+3. reply_message ใส่ว่า "กำลังดึงข้อมูลการจองครับ..."
 
 ## กฎทั่วไป
 - ห้ามอ้างห้องที่ไม่อยู่ในรายการ
 
 ## บุคลิก
-เป็นมิตร สุภาพ กระชับ ใช้คำลงท้าย "ค่ะ"
+เป็นมิตร สุภาพ กระชับ ใช้คำลงท้าย "ครับ"
 
 ## รูปแบบ Output (JSON เท่านั้น)
 {{
@@ -118,7 +118,7 @@ _SYSTEM_INSTRUCTION_TEMPLATE = """
 # ── FAQ pattern matching ───────────────────────────────────────────────────────
 
 _ROOM_LIST_REPLY = (
-    "ห้องที่มีในระบบ Roomasat มีทั้งหมด 5 ห้องค่ะ\n\n"
+    "ห้องที่มีในระบบ Roomasat มีทั้งหมด 5 ห้องครับ\n\n"
     "📋 ห้องประชุม\n"
     "• 406-3   – ห้องประชุม 1  (60 ที่นั่ง)\n"
     "• 406-5   – ห้องประชุม 2  (15 ที่นั่ง)\n"
@@ -126,7 +126,7 @@ _ROOM_LIST_REPLY = (
     "🎓 ห้องบรรยาย\n"
     "• 408-2/1 – ห้องบรรยาย 1 (20 ที่นั่ง)\n"
     "• 408-2/2 – ห้องบรรยาย 2 (20 ที่นั่ง)\n\n"
-    "อาจารย์ต้องการจองห้องไหนคะ?"
+    "อาจารย์ต้องการจองห้องไหนครับะ?"
 )
 
 _EMPTY_SLOTS = {
@@ -198,16 +198,18 @@ def process_booking_intent(line_user_id: str, current_message: str) -> dict:
     # Append the new user turn before calling the model
     history.append({"role": "user", "parts": [current_message]})
 
-    today = date.today().strftime("%Y-%m-%d")
+    now = datetime.now()
+    today    = now.strftime("%Y-%m-%d")
+    now_time = now.strftime("%H:%M")
     config = types.GenerateContentConfig(
-        system_instruction=_SYSTEM_INSTRUCTION_TEMPLATE.format(today=today),
+        system_instruction=_SYSTEM_INSTRUCTION_TEMPLATE.format(today=today, now_time=now_time),
         response_mime_type="application/json",
         temperature=0.1,
     )
 
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemma-4-31b-it",
             config=config,
             contents=_to_contents(history),
         )

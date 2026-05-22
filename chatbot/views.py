@@ -58,6 +58,33 @@ def _reply(reply_token: str, text: str) -> None:
         logger.exception("Failed to send LINE reply (token=%.20s…)", reply_token)
 
 
+def _reply_link_button(reply_token: str, body_text: str, button_label: str, url: str) -> None:
+    """Send a LINE Button Template with a single URI action."""
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.LINE_CHANNEL_ACCESS_TOKEN}",
+    }
+    payload = {
+        "replyToken": reply_token,
+        "messages": [{
+            "type": "template",
+            "altText": body_text,
+            "template": {
+                "type": "buttons",
+                "text": body_text,
+                "actions": [{"type": "uri", "label": button_label, "uri": url}],
+            },
+        }],
+    }
+    try:
+        resp = http_client.post(
+            _LINE_REPLY_URL, json=payload, headers=headers, timeout=5
+        )
+        resp.raise_for_status()
+    except Exception:
+        logger.exception("Failed to send LINE button reply (token=%.20s…)", reply_token)
+
+
 def push_line_message(line_user_id: str, text: str) -> None:
     """Send a push message to a LINE user (no reply token needed)."""
     if not line_user_id:
@@ -333,6 +360,38 @@ def my_bookings_service(user: User) -> str:
     return "\n\n".join(lines)
 
 
+# ── Follow event handler ──────────────────────────────────────────────────────
+
+def _handle_follow_event(event: dict) -> None:
+    """Send a welcome + login button when a user adds the bot as a friend."""
+    reply_token  = event.get("replyToken", "")
+    line_user_id = event.get("source", {}).get("userId", "")
+
+    if not reply_token or not line_user_id:
+        return
+
+    try:
+        user = User.objects.get(line_user_id=line_user_id)
+        _reply(
+            reply_token,
+            f"ยินดีต้อนรับกลับค่ะ อาจารย์ {user.first_name or user.username} 😊\n\n"
+            "สามารถใช้งานได้เลยค่ะ เช่น\n"
+            "• \"จองห้อง\"\n"
+            "• \"ห้องไหนว่างพรุ่งนี้\"\n"
+            "• \"ดูการจองของฉัน\"",
+        )
+    except User.DoesNotExist:
+        _reply_link_button(
+            reply_token,
+            body_text=(
+                "ยินดีต้อนรับสู่ระบบจองห้อง ECE ค่ะ! 🏫\n"
+                "กรุณาเชื่อมบัญชี TU Account เพื่อเริ่มใช้งาน"
+            ),
+            button_label="เชื่อมบัญชีที่นี่",
+            url=_LIFF_LOGIN_URL,
+        )
+
+
 # ── Event handler (pure logic, no HTTP concerns) ──────────────────────────────
 
 def _handle_message_event(event: dict) -> None:
@@ -348,9 +407,11 @@ def _handle_message_event(event: dict) -> None:
     try:
         user = User.objects.get(line_user_id=line_user_id)
     except User.DoesNotExist:
-        _reply(
+        _reply_link_button(
             reply_token,
-            f"กรุณาเข้าสู่ระบบเพื่อผูกบัญชีก่อนเริ่มใช้งานครับ:\n{_LIFF_LOGIN_URL}",
+            body_text="กรุณาเชื่อมบัญชี LINE กับระบบจองห้องก่อนเริ่มใช้งานค่ะ",
+            button_label="เชื่อมบัญชีที่นี่",
+            url=_LIFF_LOGIN_URL,
         )
         return
 
@@ -461,11 +522,16 @@ def line_webhook(request):
         return HttpResponse("Bad Request", status=400)
 
     for event in payload.get("events", []):
+        handler = None
         if event.get("type") == "message" and event.get("message", {}).get("type") == "text":
+            handler = _handle_message_event
+        elif event.get("type") == "follow":
+            handler = _handle_follow_event
+
+        if handler:
             try:
-                _handle_message_event(event)
+                handler(event)
             except Exception:
-                # Log and continue — never let one bad event crash the whole delivery.
                 logger.exception(
                     "Unhandled error processing LINE event: %s",
                     json.dumps(event)[:200],
