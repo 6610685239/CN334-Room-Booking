@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ | ระบบจองห้องวิศวกรรมศาสตร์</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+</head>
+<body class="login-body">
+
+<div class="bg-blob bg-blob--1"></div>
+<div class="bg-blob bg-blob--2"></div>
+<div class="bg-blob bg-blob--3"></div>
+
+<div class="login-wrap">
+    <img src="{% static 'images/mascot.png' %}" alt="mascot" class="mascot-top">
+    <div class="login-card">
+
+        <!-- LEFT -->
+        <div class="panel-left">
+            <div class="logo">
+                <img src="{% static 'images/Main_Logo.png' %}" alt="TSE Logo">
+            </div>
+            <h2>ระบบจองห้องประชุม<br>และห้องเรียน</h2>
+            <p>ภาควิชาวิศวกรรมไฟฟ้าและคอมพิวเตอร์</p>
+            <p>มหาวิทยาลัยธรรมศาสตร์</p>
+        </div>
+
+        <!-- RIGHT -->
+        <div class="panel-right">
+            <h1>เข้าสู่ระบบ</h1>
+            <p class="subtitle">ใช้บัญชี TU Account เพื่อเข้าสู่ระบบ</p>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="error-msg">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="input-group">
+                    <label for="username">ชื่อผู้ใช้งาน (Username) <span class="required">*</span></label>
+                    <input type="text" id="username" name="username" placeholder="กรอก Username TU Account" required>
+                </div>
+                <div class="input-group">
+                    <label for="password">รหัสผ่าน (Password) <span class="required">*</span></label>
+                    <input type="password" id="password" name="password" placeholder="กรอกรหัสผ่านของท่าน" required>
+                </div>
+                <button type="submit">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+<!-- LINE LIFF SDK -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script>
+(function () {
+    var LIFF_ID = "{{ liff_id }}";
+    var form = document.getElementById("login-form");
+    var submitBtn = form.querySelector("button[type='submit']");
+    var profileInput = document.getElementById("line_user_id_input");
+
+    // Block submit until LIFF profile is resolved (only inside LINE)
+    var liffReady = false;
+
+    form.addEventListener("submit", function (e) {
+        // Normal browser — allow submit immediately
+        if (!liff.isInClient()) return;
+        // LIFF but profile already loaded — allow
+        if (liffReady) return;
+        // LIFF but still loading — block and show feedback
+        e.preventDefault();
+        submitBtn.textContent = "กำลังโหลดข้อมูล LINE...";
+        submitBtn.disabled = true;
+    });
+
+    liff.init({ liffId: LIFF_ID })
+        .then(function () {
+            if (!liff.isInClient()) {
+                // Normal browser — nothing to link, unblock submit
+                liffReady = true;
+                return;
+            }
+            if (!liff.isLoggedIn()) {
+                // Force LINE login within LIFF context
+                liff.login();
+                return;
+            }
+            return liff.getProfile();
+        })
+        .then(function (profile) {
+            if (!profile) { liffReady = true; return; }
+            profileInput.value = profile.userId;
+            liffReady = true;
+            // Re-enable button in case user tried to submit early
+            submitBtn.disabled = false;
+            submitBtn.textContent = "เข้าสู่ระบบ";
+        })
+        .catch(function (err) {
+            console.warn("LIFF init skipped:", err);
+            liffReady = true; // Fail open — don't block the user
+            submitBtn.disabled = false;
+            submitBtn.textContent = "เข้าสู่ระบบ";
+        });
+}());
+</script>
+
+</body>
+</html>

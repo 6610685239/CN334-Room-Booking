@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รายงานสถิติการใช้ห้อง | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+</head>
+<body>
+
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
+
+            <div class="sidebar__section-label">จัดการระบบ</div>
+            <a href="{% url 'manage_rooms' %}" class="sidebar__link">
+                <span>&#127970;</span>
+                <span>จัดการห้อง</span>
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="sidebar__link active" aria-current="page">
+                <span>&#128202;</span>
+                <span>รายงาน</span>
+            </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>เจ้าหน้าที่</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">รายงาน</span>
+        </div>
+        <div class="page-content">
+
+            <div class="page-header">
+                <div class="page-header__title">รายงานสถิติการใช้งานห้องประชุมและห้องเรียน</div>
+                <a href="{% url 'export_report_csv' %}?start_date={{ start_date }}&end_date={{ end_date }}" class="btn btn--success btn--sm">&#11015; ดาวน์โหลด CSV</a>
+            </div>
+
+            <!-- Filter -->
+            <div class="card card--compact card--filter-bar">
+                <form class="reports-filter-form" method="GET">
+                    <div class="form-group form-group--no-margin">
+                        <label class="form-label">ตั้งแต่วันที่</label>
+                        <input type="date" name="start_date" value="{{ start_date }}" class="form-control" required>
+                    </div>
+                    <div class="form-group form-group--no-margin">
+                        <label class="form-label">ถึงวันที่</label>
+                        <input type="date" name="end_date" value="{{ end_date }}" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn--primary">อัปเดตข้อมูล</button>
+                </form>
+            </div>
+
+            <!-- Stat cards -->
+            <div class="reports-stats-inline">
+                <div class="stat-card-custom">
+                    <h3>การจองทั้งหมด (ครั้ง)</h3>
+                    <div class="value">{{ total_bookings }}</div>
+                </div>
+                <div class="stat-card-custom" style="border-left-color: var(--status-pending);">
+                    <h3>ชั่วโมงการใช้งานรวม</h3>
+                    <div class="value">{{ total_hours }} <span style="font-size: var(--font-size-base);">ชม.</span></div>
+                </div>
+                <div class="stat-card-custom" style="border-left-color: #2980b9;">
+                    <h3>ใช้สำหรับการสอน</h3>
+                    <div class="value">{{ teaching_count }} <span style="font-size: var(--font-size-base);">ครั้ง</span></div>
+                </div>
+                <div class="stat-card-custom" style="border-left-color: #8e44ad;">
+                    <h3>ใช้สำหรับจัดอบรม</h3>
+                    <div class="value">{{ training_count }} <span style="font-size: var(--font-size-base);">ครั้ง</span></div>
+                </div>
+            </div>
+
+            <!-- Room stats table -->
+            <div class="card card--compact">
+                <div class="card__title--sm">สถิติแยกตามห้อง (Room Utilization)</div>
+                <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>รหัสห้อง</th>
+                            <th>ชื่อห้อง</th>
+                            <th>ประเภท</th>
+                            <th>จำนวนการใช้งาน (ครั้ง)</th>
+                            <th>จำนวนชั่วโมงรวม</th>
+                            <th style="width: 25%;">อัตราการใช้งาน</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in room_stats %}
+                        <tr>
+                            <td><strong>{{ stat.room.room_id }}</strong></td>
+                            <td>{{ stat.room.name }}</td>
+                            <td>{{ stat.room.room_type }}</td>
+                            <td>{{ stat.count }}</td>
+                            <td>{{ stat.hours }} ชม.</td>
+                            <td>
+                                <div>{{ stat.util_rate }}%</div>
+                                <div class="progress-bar-bg">
+                                    <div class="progress-bar-fill" style="width: {{ stat.util_rate }}%; max-width: 100%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400);">ไม่มีข้อมูลการใช้งานในช่วงเวลานี้</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
+
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
+</body>
+</html>

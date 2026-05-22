@@ -1,0 +1,673 @@
+[
+{
+  "model": "bookings.user",
+  "pk": 1,
+  "fields": {
+    "password": "",
+    "last_login": "2026-05-22T12:15:23.921Z",
+    "is_superuser": false,
+    "username": "6610685239",
+    "first_name": "ปรัญชัย ติ้มขลิบ",
+    "last_name": "",
+    "email": "parunchai.tim@dome.tu.ac.th",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-04-25T19:38:34Z",
+    "role": "Lecturer",
+    "line_user_id": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "bookings.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$zzk9xrOJrLzRNYeyecQtEo$x3TDYe8AHlg1uMsWn9eSVc2RVZ92r5IzP2z47QmrTOk=",
+    "last_login": "2026-05-22T12:13:05.239Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "cn334roombooking@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-04-25T19:39:55Z",
+    "role": "Admin",
+    "line_user_id": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "bookings.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$yt9SkLpGfp04qhsbX5Csa9$yTZNPwG22TH13W3ZMFiIu3TQp3BHcv/N65pRQFwHRv8=",
+    "last_login": "2026-05-22T12:15:50.172Z",
+    "is_superuser": false,
+    "username": "testuser",
+    "first_name": "อาจารย์ สมชาย",
+    "last_name": "",
+    "email": "test@tu.ac.th",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-22T12:11:07.712Z",
+    "role": "Lecturer",
+    "line_user_id": null,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "bookings.room",
+  "pk": "406-3",
+  "fields": {
+    "name": "ห้องประชุม 1",
+    "room_type": "Meeting",
+    "capacity": 60,
+    "is_active": true
+  }
+},
+{
+  "model": "bookings.room",
+  "pk": "406-5",
+  "fields": {
+    "name": "ห้องประชุม 2",
+    "room_type": "Meeting",
+    "capacity": 15,
+    "is_active": true
+  }
+},
+{
+  "model": "bookings.room",
+  "pk": "408-1",
+  "fields": {
+    "name": "ห้องประชุม 3",
+    "room_type": "Meeting",
+    "capacity": 10,
+    "is_active": true
+  }
+},
+{
+  "model": "bookings.room",
+  "pk": "408-2/1",
+  "fields": {
+    "name": "ห้องบรรยาย 1",
+    "room_type": "Classroom",
+    "capacity": 20,
+    "is_active": true
+  }
+},
+{
+  "model": "bookings.room",
+  "pk": "408-2/2",
+  "fields": {
+    "name": "ห้องบรรยาย 2",
+    "room_type": "Classroom",
+    "capacity": 20,
+    "is_active": true
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "room": "408-2/2",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "123123",
+    "start_time": "2026-04-26T03:05:00Z",
+    "end_time": "2026-04-27T03:05:00Z",
+    "status": "Rejected",
+    "created_at": "2026-04-25T20:05:48.115Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 2,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "Test",
+    "start_time": "2026-04-30T11:00:00Z",
+    "end_time": "2026-04-30T13:00:00Z",
+    "status": "Cancelled",
+    "created_at": "2026-04-26T15:15:39.890Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 3,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "Test2",
+    "start_time": "2026-04-28T10:00:00Z",
+    "end_time": "2026-04-28T13:00:00Z",
+    "status": "Rejected",
+    "created_at": "2026-04-26T16:22:13.363Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 4,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-04-30T02:00:00Z",
+    "end_time": "2026-04-30T04:00:00Z",
+    "status": "Approved",
+    "created_at": "2026-04-26T19:18:59.197Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 5,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "Test",
+    "start_time": "2026-04-29T03:00:00Z",
+    "end_time": "2026-04-29T06:00:00Z",
+    "status": "Rejected",
+    "created_at": "2026-04-28T18:39:21.406Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 6,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-01T03:00:00Z",
+    "end_time": "2026-06-01T06:00:00Z",
+    "status": "Cancelled",
+    "created_at": "2026-05-21T12:34:02.360Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 7,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-01T03:00:00Z",
+    "end_time": "2026-06-01T06:00:00Z",
+    "status": "Cancelled",
+    "created_at": "2026-05-21T12:54:22.957Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 8,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-03T03:00:00Z",
+    "end_time": "2026-06-03T06:00:00Z",
+    "status": "Cancelled",
+    "created_at": "2026-05-21T12:54:22.959Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 9,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-05T03:00:00Z",
+    "end_time": "2026-06-05T06:00:00Z",
+    "status": "Cancelled",
+    "created_at": "2026-05-21T12:54:22.961Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 10,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-08T03:00:00Z",
+    "end_time": "2026-06-08T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.963Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 11,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-10T03:00:00Z",
+    "end_time": "2026-06-10T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.965Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 12,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-12T03:00:00Z",
+    "end_time": "2026-06-12T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.967Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 13,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-15T03:00:00Z",
+    "end_time": "2026-06-15T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.969Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 14,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-17T03:00:00Z",
+    "end_time": "2026-06-17T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.971Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 15,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-19T03:00:00Z",
+    "end_time": "2026-06-19T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.973Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 16,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-22T03:00:00Z",
+    "end_time": "2026-06-22T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.975Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 17,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-24T03:00:00Z",
+    "end_time": "2026-06-24T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.976Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 18,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-26T03:00:00Z",
+    "end_time": "2026-06-26T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.978Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 19,
+  "fields": {
+    "user": 1,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-29T03:00:00Z",
+    "end_time": "2026-06-29T06:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:54:22.980Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 20,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-02T04:00:00Z",
+    "end_time": "2026-06-02T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.948Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 21,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-04T04:00:00Z",
+    "end_time": "2026-06-04T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.951Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 22,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-09T04:00:00Z",
+    "end_time": "2026-06-09T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.953Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 23,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-11T04:00:00Z",
+    "end_time": "2026-06-11T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.955Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 24,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-16T04:00:00Z",
+    "end_time": "2026-06-16T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.957Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 25,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-18T04:00:00Z",
+    "end_time": "2026-06-18T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.958Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 26,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-23T04:00:00Z",
+    "end_time": "2026-06-23T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.960Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 27,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-25T04:00:00Z",
+    "end_time": "2026-06-25T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.962Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 28,
+  "fields": {
+    "user": 1,
+    "room": "406-5",
+    "purpose_type": "Teaching",
+    "course_code": "CN201",
+    "course_name": "Test",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-06-30T04:00:00Z",
+    "end_time": "2026-06-30T09:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-21T12:55:55.963Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 29,
+  "fields": {
+    "user": 4,
+    "room": "408-1",
+    "purpose_type": "Training",
+    "course_code": "",
+    "course_name": "",
+    "program": "",
+    "training_topic": "ติวเข้ม",
+    "start_time": "2026-05-27T04:00:00Z",
+    "end_time": "2026-05-27T07:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:14:49.461Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 30,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-07T02:00:00Z",
+    "end_time": "2026-10-07T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.306Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 31,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-14T02:00:00Z",
+    "end_time": "2026-10-14T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.309Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 32,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-21T02:00:00Z",
+    "end_time": "2026-10-21T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.311Z"
+  }
+},
+{
+  "model": "bookings.booking",
+  "pk": 33,
+  "fields": {
+    "user": 4,
+    "room": "406-3",
+    "purpose_type": "Teaching",
+    "course_code": "CN334",
+    "course_name": "Django",
+    "program": "Bachelor",
+    "training_topic": "",
+    "start_time": "2026-10-28T02:00:00Z",
+    "end_time": "2026-10-28T05:00:00Z",
+    "status": "Pending",
+    "created_at": "2026-05-22T12:16:34.313Z"
+  }
+}
+]

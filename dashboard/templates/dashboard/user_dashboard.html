@@ -1,0 +1,174 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แดชบอร์ด | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+</head>
+<body>
+
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link active" aria-current="page">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>อาจารย์</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">แดชบอร์ด</span>
+        </div>
+        <div class="page-content">
+
+            <!-- Page header -->
+            <div class="page-header">
+                <div>
+                    <div class="page-header__title">ยินดีต้อนรับ, อ. {{ user.first_name|default:user.username }}</div>
+                    <div class="page-header__subtitle">{{ now|date:"l\ที่ j F Y" }}</div>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags == 'error' %}alert--error{% elif message.tags == 'success' %}alert--success{% else %}alert--warning{% endif %}">
+                        <span>&#9432;</span>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Quick action cards -->
+            <div class="quick-action-grid">
+                <a href="{% url 'book_room' %}" class="qa-card qa-card--primary">
+                    <div class="qa-card__icon">&#128197;</div>
+                    <div class="qa-card__title">จองห้องใหม่</div>
+                    <div class="qa-card__sub">เลือกห้องและเวลาที่ต้องการ</div>
+                </a>
+                <a href="{% url 'calendar' %}" class="qa-card">
+                    <div class="qa-card__icon">&#128340;</div>
+                    <div class="qa-card__title">ดูปฏิทินห้อง</div>
+                    <div class="qa-card__sub">ตรวจสอบตารางห้องว่าง</div>
+                </a>
+                <a href="#upcoming" class="qa-card">
+                    <div class="qa-card__icon">&#128203;</div>
+                    <div class="qa-card__title">การจองของฉัน</div>
+                    <div class="qa-card__sub">ดูรายการจองที่กำลังจะมาถึง</div>
+                </a>
+            </div>
+
+            <!-- Stats row -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card__number">{{ pending_count }}</div>
+                    <div class="stat-card__label">รออนุมัติ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__number">{{ approved_count }}</div>
+                    <div class="stat-card__label">อนุมัติแล้ว</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__number">{{ month_count }}</div>
+                    <div class="stat-card__label">การจองเดือนนี้</div>
+                </div>
+            </div>
+
+            <!-- Upcoming bookings -->
+            <div id="upcoming">
+                <div class="section-heading">การจองที่กำลังจะมาถึง</div>
+                <div class="upcoming-list">
+                    {% for booking in upcoming %}
+                    <div class="upcoming-item">
+                        <div>
+                            <div class="upcoming-item__room">{{ booking.room.name }} — {{ booking.room.room_id }}</div>
+                            <div class="upcoming-item__meta">
+                                {{ booking.start_time|date:"d/m/Y" }} &nbsp;&#183;&nbsp; {{ booking.start_time|date:"H:i" }}–{{ booking.end_time|date:"H:i" }}
+                                &nbsp;&#183;&nbsp;
+                                {% if booking.purpose_type == 'Teaching' %}สอน: {{ booking.course_code }}{% else %}อบรม: {{ booking.training_topic|truncatechars:30 }}{% endif %}
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: var(--space-3);">
+                            <span class="badge badge--{{ booking.status|lower }}">{{ booking.get_status_display|default:booking.status }}</span>
+                            {% if booking.status != 'Cancelled' and booking.status != 'Rejected' %}
+                                <a href="{% url 'cancel_booking' booking.id %}" class="btn btn--ghost btn--sm" onclick="return confirm('ยืนยันการยกเลิกการจองนี้?');">ยกเลิก</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <img src="{% static 'images/mascots.png' %}" alt="" class="empty-state__mascot">
+                        <div class="empty-state__text">ไม่มีการจองที่กำลังจะมาถึง</div>
+                        <a href="{% url 'book_room' %}" class="btn btn--primary">&#43; จองห้องใหม่</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
+
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
+</body>
+</html>

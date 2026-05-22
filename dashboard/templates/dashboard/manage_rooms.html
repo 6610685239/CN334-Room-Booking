@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>จัดการข้อมูลห้อง | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+</head>
+<body>
+
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
+
+            <div class="sidebar__section-label">จัดการระบบ</div>
+            <a href="{% url 'manage_rooms' %}" class="sidebar__link active" aria-current="page">
+                <span>&#127970;</span>
+                <span>จัดการห้อง</span>
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="sidebar__link">
+                <span>&#128202;</span>
+                <span>รายงาน</span>
+            </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>เจ้าหน้าที่</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">จัดการห้อง</span>
+        </div>
+        <div class="page-content">
+
+            <div class="page-header">
+                <div class="page-header__title">จัดการข้อมูลห้อง</div>
+                <button class="btn btn--primary" onclick="showModal()">&#43; เพิ่มห้องใหม่</button>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert--success">
+                        <span>&#10003;</span>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card card--compact">
+                <div class="table-responsive">
+                <table class="data-table data-table--rooms">
+                    <thead>
+                        <tr>
+                            <th>รหัสห้อง</th>
+                            <th>ชื่อห้อง</th>
+                            <th>ประเภท</th>
+                            <th>ความจุ</th>
+                            <th>สถานะ</th>
+                            <th>จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room in rooms %}
+                        <tr>
+                            <td><strong>{{ room.room_id }}</strong></td>
+                            <td>{{ room.name }}</td>
+                            <td>{{ room.room_type }}</td>
+                            <td>{{ room.capacity }} ที่นั่ง</td>
+                            <td>
+                                {% if room.is_active %}
+                                    <span class="badge badge--approved">เปิดใช้งาน</span>
+                                {% else %}
+                                    <span class="badge badge--rejected">ปิดใช้งาน</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn--ghost btn--sm" onclick="showModal('{{ room.room_id }}', '{{ room.name }}', '{{ room.room_type }}', '{{ room.capacity }}', '{{ room.is_active|yesno:'true,false' }}')">แก้ไข</button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="6" style="text-align: center; color: var(--gray-400);">ไม่พบข้อมูลห้องในระบบ</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Room Modal -->
+<div id="roomModal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="font-size: var(--font-size-lg); font-weight: var(--font-weight-bold); color: var(--color-text-heading);">เพิ่มห้องใหม่</h2>
+        <form method="POST" action="{% url 'save_room' %}" style="display: grid; gap: var(--space-4);">
+            {% csrf_token %}
+            <input type="hidden" name="original_room_id" id="original_room_id">
+
+            <div class="form-group">
+                <label class="form-label">รหัสห้อง</label>
+                <input type="text" name="room_id" id="form_room_id" class="form-control" required placeholder="เช่น 406-3">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ชื่อห้อง</label>
+                <input type="text" name="name" id="form_name" class="form-control" required placeholder="เช่น ห้องประชุม 1">
+            </div>
+            <div class="form-group">
+                <label class="form-label">ประเภทห้อง</label>
+                <select name="room_type" id="form_room_type" class="form-control">
+                    <option value="Meeting">ห้องประชุม</option>
+                    <option value="Classroom">ห้องบรรยาย</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">จำนวนที่นั่ง</label>
+                <input type="number" name="capacity" id="form_capacity" class="form-control" required>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" name="is_active" id="form_is_active" class="form-check__input" checked>
+                <label for="form_is_active" class="form-check__label">เปิดให้ใช้งานในระบบ</label>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-2);">
+                <button type="submit" class="btn btn--primary">บันทึก</button>
+                <button type="button" class="btn btn--ghost" onclick="hideModal()">ยกเลิก</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showModal(id='', name='', type='Meeting', cap='', active='true') {
+        document.getElementById('roomModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = id ? 'แก้ไขข้อมูลห้อง ' + id : 'เพิ่มห้องใหม่';
+        document.getElementById('original_room_id').value = id;
+        document.getElementById('form_room_id').value = id;
+        document.getElementById('form_name').value = name;
+        document.getElementById('form_room_type').value = type;
+        document.getElementById('form_capacity').value = cap;
+        document.getElementById('form_is_active').checked = (active === 'true');
+    }
+    function hideModal() {
+        document.getElementById('roomModal').style.display = 'none';
+    }
+</script>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
+
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
+</body>
+</html>

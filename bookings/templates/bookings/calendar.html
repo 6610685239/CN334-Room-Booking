@@ -1,0 +1,312 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ปฏิทินห้องว่าง | ระบบจองห้อง ECE</title>
+    <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+</head>
+<body>
+
+<input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar__header">
+            <img src="{% static 'images/ece.png' %}" alt="ECE" class="sidebar__logo">
+            <div class="sidebar__title">
+                ระบบจองห้อง
+                <small>ภาควิชา ECE</small>
+            </div>
+        </div>
+
+        <nav class="sidebar__nav">
+            <div class="sidebar__section-label">เมนูหลัก</div>
+            <a href="{% url 'dashboard' %}" class="sidebar__link">
+                <span>&#127968;</span>
+                <span>แดชบอร์ด</span>
+            </a>
+            <a href="{% url 'book_room' %}" class="sidebar__link">
+                <span>&#128197;</span>
+                <span>จองห้อง</span>
+            </a>
+            <a href="{% url 'calendar' %}" class="sidebar__link active" aria-current="page">
+                <span>&#128340;</span>
+                <span>ปฏิทินห้องว่าง</span>
+            </a>
+            {% if user.role == 'Lecturer' %}
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+            {% endif %}
+            {% if user.role == 'Admin' %}
+            <div class="sidebar__section-label">จัดการระบบ</div>
+            <a href="{% url 'manage_rooms' %}" class="sidebar__link">
+                <span>&#127970;</span>
+                <span>จัดการห้อง</span>
+            </a>
+            <a href="{% url 'report_dashboard' %}" class="sidebar__link">
+                <span>&#128202;</span>
+                <span>รายงาน</span>
+            </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+            {% endif %}
+        </nav>
+
+        <div class="sidebar__footer">
+            <div class="sidebar__avatar">
+                {{ user.first_name|first|default:user.username|first|upper }}
+            </div>
+            <div class="sidebar__username">
+                {{ user.get_full_name|default:user.username }}
+                <small>{% if user.role == 'Admin' %}เจ้าหน้าที่{% elif user.role == 'Lecturer' %}อาจารย์{% else %}{{ user.role }}{% endif %}</small>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar__logout">&#9663; ออกจากระบบ</a>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">ปฏิทินห้องว่าง</span>
+        </div>
+        <div class="page-content">
+
+            <div class="page-header">
+                <div>
+                    <div class="page-header__title">ตารางห้องว่าง</div>
+                    <div class="page-header__subtitle">คลิกที่รายการจองเพื่อดูรายละเอียด &nbsp;|&nbsp; ลากช่วงเวลาว่างเพื่อเริ่มจอง</div>
+                </div>
+            </div>
+
+            <!-- Room selector -->
+            <div class="cal-topbar">
+                <label for="roomSelector">เลือกดูห้อง:</label>
+                <select id="roomSelector" class="form-control">
+                    <option value="">— ดูทุกห้องรวมกัน —</option>
+                    {% for room in rooms %}
+                        <option value="{{ room.room_id }}">{{ room.name }} &nbsp;({{ room.room_id }}) &nbsp;— {{ room.capacity }} ที่นั่ง</option>
+                    {% endfor %}
+                </select>
+                <span class="cal-topbar__hint">&#9432; ลากเมาส์คลุมช่วงเวลาสีขาว (ว่าง) เพื่อจองห้อง</span>
+            </div>
+
+            <!-- Legend -->
+            <div class="cal-legend">
+                <div class="cal-legend__item">
+                    <div class="cal-legend__dot cal-legend__dot--available"></div>
+                    <span><strong>ว่าง</strong> — สามารถจองได้</span>
+                </div>
+                <div class="cal-legend__item">
+                    <div class="cal-legend__dot cal-legend__dot--approved"></div>
+                    <span><strong>จองแล้ว</strong> (อนุมัติแล้ว)</span>
+                </div>
+                <div class="cal-legend__item">
+                    <div class="cal-legend__dot cal-legend__dot--pending"></div>
+                    <span><strong>รออนุมัติ</strong></span>
+                </div>
+                <div class="cal-legend__item" style="margin-left: auto;">
+                    <span style="background:#fff8e1; border:2px solid #f9a825; border-radius:4px; padding:2px 10px; font-size:var(--font-size-sm);">&#9728; คอลัมน์สีเหลืองอ่อน = วันนี้</span>
+                </div>
+            </div>
+
+            <!-- Conflict alert (shown by JS when overlaps detected) -->
+            <div class="conflict-alert" id="conflictAlert">
+                <span class="conflict-alert__icon">⚠️</span>
+                <div>
+                    <strong>พบการจองทับซ้อนกันหลายห้อง</strong> — ช่วงเวลาต่อไปนี้มีห้องถูกจองพร้อมกันมากกว่า 1 ห้อง:
+                    <div class="conflict-alert__list" id="conflictList"></div>
+                </div>
+            </div>
+
+            <!-- Calendar -->
+            <div class="fc-calendar-wrap">
+                <div id="calendar"></div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Booking detail popup -->
+<div class="booking-popup" id="bookingPopup" onclick="closePopup(event)">
+    <div class="booking-popup__box">
+        <div class="booking-popup__title">&#128203; รายละเอียดการจอง</div>
+        <div class="popup-row">
+            <div class="popup-row__key">ห้อง</div>
+            <div class="popup-row__val" id="popup-room">—</div>
+        </div>
+        <div class="popup-row">
+            <div class="popup-row__key">วันที่</div>
+            <div class="popup-row__val" id="popup-date">—</div>
+        </div>
+        <div class="popup-row">
+            <div class="popup-row__key">เวลา</div>
+            <div class="popup-row__val" id="popup-time">—</div>
+        </div>
+        <div class="popup-row">
+            <div class="popup-row__key">วัตถุประสงค์</div>
+            <div class="popup-row__val" id="popup-purpose">—</div>
+        </div>
+        <div class="popup-row">
+            <div class="popup-row__key">สถานะ</div>
+            <div class="popup-row__val" id="popup-status">—</div>
+        </div>
+        <button class="btn btn--ghost" onclick="document.getElementById('bookingPopup').classList.remove('open')">&#10005; ปิด</button>
+    </div>
+</div>
+
+<script>
+    function closePopup(e) {
+        if (e.target === document.getElementById('bookingPopup')) {
+            document.getElementById('bookingPopup').classList.remove('open');
+        }
+    }
+
+    function thaiDate(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    function thaiTime(start, end) {
+        const fmt = dt => new Date(dt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        return fmt(start) + ' – ' + fmt(end);
+    }
+
+    const statusLabel = { Approved: 'อนุมัติแล้ว ✓', Pending: 'รออนุมัติ ⏳', Rejected: 'ปฏิเสธ ✗', Cancelled: 'ยกเลิก' };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl  = document.getElementById('calendar');
+        var roomSelector = document.getElementById('roomSelector');
+
+        var isMobile = function () { return window.innerWidth < 768; };
+
+        var calendar = new FullCalendar.Calendar(calendarEl, {
+            locale: 'th',
+            initialView: isMobile() ? 'timeGridDay' : 'timeGridWeek',
+            headerToolbar: isMobile()
+                ? { left: 'prev,next', center: 'title', right: 'today' }
+                : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
+            buttonText: {
+                today: 'วันนี้', month: 'รายเดือน', week: 'สัปดาห์', day: 'วัน',
+            },
+            slotMinTime:  '08:00:00',
+            slotMaxTime:  '20:00:00',
+            slotDuration: '01:00:00',
+            snapDuration: '01:00:00',
+            allDaySlot:   false,
+            nowIndicator: true,
+            selectable:   true,
+            selectMirror: true,
+            selectAllow: function (selectInfo) {
+                const startDate = selectInfo.start.toDateString();
+                const endDate = new Date(selectInfo.end.valueOf() - 1).toDateString();
+                return startDate === endDate; 
+            },
+            displayEventTime: true,
+            eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+            events: '/api/bookings/',
+
+            /* Responsive: switch view on resize */
+            windowResize: function () {
+                var target = isMobile() ? 'timeGridDay' : 'timeGridWeek';
+                if (calendar.view.type !== target) {
+                    calendar.changeView(target);
+                    calendar.setOption('headerToolbar', isMobile()
+                        ? { left: 'prev,next', center: 'title', right: 'today' }
+                        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }
+                    );
+                }
+            },
+
+            /* Today column yellow */
+            datesSet: function () {
+                requestAnimationFrame(function () {
+                    document.querySelectorAll('.fc-timegrid-col.fc-day-today').forEach(function (col) {
+                        col.style.setProperty('background-color', '#fff8e1', 'important');
+                    });
+                });
+            },
+
+            eventDidMount: function (info) {
+                var status = info.event.extendedProps.status;
+                if (status === 'Approved') {
+                    info.el.style.backgroundColor = '#C0392B';
+                    info.el.style.borderColor     = '#922B21';
+                    info.el.style.color           = '#fff';
+                } else if (status === 'Pending') {
+                    info.el.style.backgroundColor = '#E67E22';
+                    info.el.style.borderColor     = '#D35400';
+                    info.el.style.color           = '#fff';
+                }
+            },
+
+            /* Click event → show popup */
+            eventClick: function (info) {
+                var p = info.event.extendedProps;
+                document.getElementById('popup-room').textContent    = p.room_name || '—';
+                document.getElementById('popup-date').textContent    = thaiDate(info.event.startStr);
+                document.getElementById('popup-time').textContent    = thaiTime(info.event.startStr, info.event.endStr);
+                document.getElementById('popup-purpose').textContent = p.purpose || '—';
+                document.getElementById('popup-status').textContent  = statusLabel[p.status] || p.status || '—';
+                document.getElementById('bookingPopup').classList.add('open');
+            },
+
+            /* Drag to book */
+            select: function (info) {
+                var selectedRoom = roomSelector.value;
+                if (!selectedRoom) {
+                    alert('กรุณาเลือกห้องจากกล่องด้านบนก่อนทำการจองครับ');
+                    calendar.unselect();
+                    return;
+                }
+                if (info.allDay || !info.startStr.includes('T')) {
+                    window.location.href = '/book/?room=' + selectedRoom + '&date=' + info.startStr;
+                } else {
+                    window.location.href = '/book/?room=' + selectedRoom +
+                        '&start=' + info.startStr.substring(0, 16) +
+                        '&end='   + info.endStr.substring(0, 16);
+                }
+            }
+        });
+
+        calendar.render();
+
+        roomSelector.addEventListener('change', function () {
+            calendar.removeAllEventSources();
+            calendar.addEventSource('/api/bookings/?room_id=' + this.value);
+        });
+    });
+</script>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
+
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
+</body>
+</html>
