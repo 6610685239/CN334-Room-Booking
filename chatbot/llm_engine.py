@@ -69,7 +69,7 @@ _EMPTY_SLOTS = {"room": None, "date": None, "start_time": None, "end_time": None
 _FAQ_PATTERNS: list[tuple[re.Pattern, dict]] = [
     (
         re.compile(
-            r"มีห้อง(อะไร|ไหน|ใดบ้าง)?บ้าง|ห้อง(อะไร|ทั้งหมด|มีอะไร)|รายชื่อห้อง|ดูห้อง|ห้องว่าง(มีอะไร|อะไรบ้าง)?$",
+            r"มีห้อง(อะไร|ไหน|ใดบ้าง)?บ้าง|ห้อง(อะไร|ทั้งหมด|มีอะไร)|รายชื่อห้อง|ดูห้อง|ห้องว่าง(มีอะไร|อะไรบ้าง)?",
             re.IGNORECASE,
         ),
         {"is_complete": False, "reply_message": _ROOM_LIST_REPLY, "extracted_data": _EMPTY_SLOTS},
@@ -78,10 +78,11 @@ _FAQ_PATTERNS: list[tuple[re.Pattern, dict]] = [
 
 
 def _faq_response(text: str) -> dict | None:
-    """Return a static response if text matches a known FAQ pattern, else None."""
+    """Return a fresh copy of a static response if text matches a known FAQ pattern, else None."""
     for pattern, response in _FAQ_PATTERNS:
         if pattern.search(text):
-            return response
+            # Return a copy so callers cannot mutate the shared template dict.
+            return {**response, "extracted_data": {**response["extracted_data"]}}
     return None
 
 _ERROR_RESPONSE = {
@@ -106,7 +107,7 @@ def _to_contents(history: list[dict]) -> list[types.Content]:
 
 def process_booking_intent(line_user_id: str, current_message: str) -> dict:
     """
-    Run one turn of the booking conversation through Gemini 2.0 Flash.
+    Run one turn of the booking conversation through Gemini 2.5 Flash.
 
     Conversation history is stored in Django's cache keyed by line_user_id.
     Cleared when is_complete=true; refreshed with a 5-minute TTL otherwise.
@@ -114,12 +115,12 @@ def process_booking_intent(line_user_id: str, current_message: str) -> dict:
     NOTE: Django's default LocMemCache is per-process. Use Redis/Memcached
     for multi-worker deployments.
     """
-    client = genai.Client(api_key=settings.GEMINI_API_KEY)
-
     # Return a fixed response for common FAQ questions without calling the LLM.
     faq = _faq_response(current_message)
     if faq:
         return faq
+
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
     cache_key = _CACHE_KEY_TEMPLATE.format(line_user_id)
     history: list[dict] = cache.get(cache_key, [])
