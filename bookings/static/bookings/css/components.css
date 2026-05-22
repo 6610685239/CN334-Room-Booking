@@ -476,6 +476,10 @@ textarea.form-control {
   font-size: 3rem;
   opacity: .4;
 }
+.empty-state__mascot {
+  width: 160px;
+  height: auto;
+}
 .empty-state__text {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);

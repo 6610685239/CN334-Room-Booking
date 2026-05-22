@@ -10,6 +10,7 @@
 <body>
 
 <input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
 
 <div class="app-shell">
 
@@ -49,6 +50,11 @@
                 <span>รายงาน</span>
             </a>
             {% endif %}
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
         </nav>
 
         <div class="sidebar__footer">
@@ -65,6 +71,10 @@
 
     <!-- Main content -->
     <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">จองห้อง</span>
+        </div>
         <div class="page-content">
 
             <div class="page-header">
@@ -220,7 +230,7 @@
 
                         <div class="form-group">
                             <label class="form-label">รูปแบบการจอง</label>
-                            <div style="display: flex; gap: 20px; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 10px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
                                 <label style="font-weight: normal; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                                     <input type="radio" name="booking_type" value="single" id="type_single" checked onchange="toggleBookingType()"> 
                                     จองครั้งเดียว (ระบุวันที่)
@@ -238,7 +248,7 @@
                         </div>
 
                         <div id="section_recurring_date" style="display: none; background: #eef2f5; padding: 15px; border-radius: 5px; border: 1px dashed #bdc3c7; margin-bottom: 20px;">
-                            <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px;">
                                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                                     <label class="form-label form-label--required">วันที่เริ่มต้น</label>
                                     <input type="date" name="recur_start_date" id="recur_start_date" class="form-control" onchange="syncRecurringDate()">
@@ -452,6 +462,13 @@
     function renderSlots(bookedSlots) {
         const container = document.getElementById('time-slots-container');
         container.innerHTML = '';
+
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const dateVal  = document.getElementById('booking_date').value;
+        const isToday  = (dateVal === todayStr);
+        const currentHour = now.getHours();
+
         allSlots.forEach(time => {
             const h       = parseInt(time.split(':')[0]);
             const nextTime = `${(h + 1).toString().padStart(2, '0')}:00`;
@@ -460,9 +477,14 @@
             btn.dataset.start = time;
             btn.dataset.end   = nextTime;
             btn.innerText     = `${time} – ${nextTime}`;
+
             const isBooked = bookedSlots.some(b => time >= b.start && time < b.end);
-            if (isBooked) {
+            // ถ้าเป็นวันนี้ และ slot นี้เริ่มก่อนหรือเท่ากับชั่วโมงปัจจุบัน ให้ disable
+            const isPast   = isToday && h <= currentHour;
+
+            if (isBooked || isPast) {
                 btn.classList.add('disabled');
+                if (isPast && !isBooked) btn.title = 'เวลาผ่านมาแล้ว';
             } else {
                 btn.onclick = () => toggleSlot(btn);
             }
@@ -512,6 +534,23 @@
         }
     }
 </script>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>ใช้งานผ่านไลน์
+        </p>
 
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
 </body>
 </html>

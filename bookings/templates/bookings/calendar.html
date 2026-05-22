@@ -7,251 +7,11 @@
     <title>ปฏิทินห้องว่าง | ระบบจองห้อง ECE</title>
     <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
-    <style>
-        /* ---- Room selector bar ---- */
-        .cal-topbar {
-            display: flex;
-            align-items: center;
-            gap: var(--space-4);
-            flex-wrap: wrap;
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-xl);
-            padding: var(--space-4) var(--space-5);
-            margin-bottom: var(--space-4);
-            box-shadow: var(--shadow-sm);
-        }
-        .cal-topbar label {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-semi);
-            color: var(--color-text-heading);
-            white-space: nowrap;
-        }
-        .cal-topbar select {
-            font-size: var(--font-size-base);
-            padding: var(--space-2) var(--space-4);
-            min-width: 240px;
-        }
-        .cal-topbar__hint {
-            font-size: var(--font-size-sm);
-            color: var(--color-text-muted);
-        }
-
-        /* ---- Legend ---- */
-        .cal-legend {
-            display: flex;
-            align-items: center;
-            gap: var(--space-5);
-            flex-wrap: wrap;
-            background: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-xl);
-            padding: var(--space-4) var(--space-5);
-            margin-bottom: var(--space-5);
-            box-shadow: var(--shadow-sm);
-        }
-        .cal-legend__title {
-            font-size: var(--font-size-base);
-            font-weight: var(--font-weight-semi);
-            color: var(--color-text-heading);
-            margin-right: var(--space-2);
-        }
-        .cal-legend__item {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-            font-size: var(--font-size-base);
-            color: var(--color-text-body);
-        }
-        .cal-legend__dot {
-            width: 20px;
-            height: 20px;
-            border-radius: var(--radius-sm);
-            flex-shrink: 0;
-        }
-        .cal-legend__dot--available {
-            background-color: #e8f5e9;
-            border: 2px solid #43a047;
-        }
-        .cal-legend__dot--approved {
-            background-color: #C0392B;
-            border: 2px solid #922B21;
-        }
-        .cal-legend__dot--pending {
-            background-color: #F39C12;
-            border: 2px solid #D68910;
-        }
-
-        /* ---- FullCalendar overrides for readability ---- */
-        #calendar {
-            background: var(--color-bg-card);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--color-border);
-            padding: var(--space-4);
-            box-shadow: var(--shadow-sm);
-        }
-
-        /* Larger text in all calendar cells */
-        .fc .fc-col-header-cell-cushion,
-        .fc .fc-timegrid-slot-label-cushion,
-        .fc .fc-daygrid-day-number,
-        .fc .fc-toolbar-title {
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-        }
-
-        /* Toolbar buttons bigger */
-        .fc .fc-button {
-            font-size: 0.95rem !important;
-            padding: 8px 16px !important;
-            font-weight: 600 !important;
-        }
-
-        /* Make each hour row taller — easier to click */
-        .fc .fc-timegrid-slot {
-            height: 64px !important;
-        }
-
-        /* Column headers (day names) */
-        .fc .fc-col-header-cell {
-            background-color: var(--gray-50);
-            padding: 10px 0 !important;
-        }
-
-        /* Today column highlight */
-        .fc .fc-day-today {
-            background-color: #fff8e1 !important;
-        }
-        .fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
-            color: var(--tu-red) !important;
-        }
-
-        /* Divider line between each day column */
-        .fc .fc-timegrid-col {
-            border-right: 2px solid #d0d0d0 !important;
-        }
-        .fc .fc-col-header-cell {
-            border-right: 2px solid #d0d0d0 !important;
-        }
-
-        /* Empty slots — light green to match legend */
-        .fc .fc-timegrid-slot-lane {
-            background-color: #e8f5e9 !important;
-        }
-
-        /* Available slot hover — shows green tint when user drags */
-        .fc .fc-highlight {
-            background-color: rgba(67, 160, 71, 0.2) !important;
-            border: 2px dashed #43a047 !important;
-        }
-
-        /* Events — bigger font, taller look */
-        .fc .fc-event {
-            border-radius: var(--radius-sm) !important;
-            font-size: 0.875rem !important;
-            font-weight: 600 !important;
-            padding: 4px 6px !important;
-            cursor: pointer !important;
-            border: none !important;
-        }
-        .fc-event-approved {
-            background-color: #C0392B !important;
-            color: #fff !important;
-        }
-        .fc-event-pending {
-            background-color: #F39C12 !important;
-            color: #fff !important;
-        }
-
-        /* Now indicator line */
-        .fc .fc-timegrid-now-indicator-line {
-            border-color: #43a047 !important;
-            border-width: 2px !important;
-        }
-        .fc .fc-timegrid-now-indicator-arrow {
-            border-top-color: #43a047 !important;
-            border-bottom-color: #43a047 !important;
-        }
-
-        /* Conflict alert banner */
-        .conflict-alert {
-            display: none;
-            align-items: center;
-            gap: var(--space-3);
-            background: #fff8e1;
-            border: 2px solid #f9a825;
-            border-radius: var(--radius-xl);
-            padding: var(--space-3) var(--space-5);
-            margin-bottom: var(--space-4);
-            font-size: var(--font-size-sm);
-            color: #7d5a00;
-            font-weight: var(--font-weight-medium);
-            box-shadow: var(--shadow-sm);
-        }
-        .conflict-alert.show { display: flex; }
-        .conflict-alert__icon { font-size: 1.3rem; flex-shrink: 0; }
-        .conflict-alert__list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--space-2);
-            margin-top: var(--space-1);
-        }
-        .conflict-alert__chip {
-            background: #ffe082;
-            border: 1px solid #f9a825;
-            border-radius: 99px;
-            padding: 2px 10px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        /* Striped left border on conflicting events */
-        .fc-event-conflict {
-            border-left: 4px solid #f9a825 !important;
-            box-shadow: inset 0 0 0 2px rgba(249,168,37,0.4) !important;
-        }
-
-        /* Detail popup */
-        .booking-popup {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,.45);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-        .booking-popup.open { display: flex; }
-        .booking-popup__box {
-            background: #fff;
-            border-radius: var(--radius-xl);
-            padding: var(--space-8);
-            width: min(420px, 90vw);
-            box-shadow: 0 20px 60px rgba(0,0,0,.3);
-            display: grid;
-            gap: var(--space-4);
-        }
-        .booking-popup__title {
-            font-size: var(--font-size-xl);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-heading);
-        }
-        .popup-row {
-            display: grid;
-            grid-template-columns: 100px 1fr;
-            gap: var(--space-2);
-            font-size: var(--font-size-base);
-            padding-bottom: var(--space-3);
-            border-bottom: 1px solid var(--color-border);
-        }
-        .popup-row:last-of-type { border-bottom: none; }
-        .popup-row__key { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
-        .popup-row__val { color: var(--color-text-body); font-weight: var(--font-weight-semi); }
-    </style>
 </head>
 <body>
 
 <input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
 
 <div class="app-shell">
 
@@ -279,7 +39,13 @@
                 <span>&#128340;</span>
                 <span>ปฏิทินห้องว่าง</span>
             </a>
-
+            {% if user.role == 'Lecturer' %}
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
+            {% endif %}
             {% if user.role == 'Admin' %}
             <div class="sidebar__section-label">จัดการระบบ</div>
             <a href="{% url 'manage_rooms' %}" class="sidebar__link">
@@ -289,6 +55,11 @@
             <a href="{% url 'report_dashboard' %}" class="sidebar__link">
                 <span>&#128202;</span>
                 <span>รายงาน</span>
+            </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
             </a>
             {% endif %}
         </nav>
@@ -307,6 +78,10 @@
 
     <!-- Main content -->
     <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">ปฏิทินห้องว่าง</span>
+        </div>
         <div class="page-content">
 
             <div class="page-header">
@@ -416,19 +191,16 @@
         var calendarEl  = document.getElementById('calendar');
         var roomSelector = document.getElementById('roomSelector');
 
+        var isMobile = function () { return window.innerWidth < 768; };
+
         var calendar = new FullCalendar.Calendar(calendarEl, {
             locale: 'th',
-            initialView: 'timeGridWeek',
-            headerToolbar: {
-                left:   'prev,next today',
-                center: 'title',
-                right:  'dayGridMonth,timeGridWeek,timeGridDay'
-            },
+            initialView: isMobile() ? 'timeGridDay' : 'timeGridWeek',
+            headerToolbar: isMobile()
+                ? { left: 'prev,next', center: 'title', right: 'today' }
+                : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' },
             buttonText: {
-                today:    'วันนี้',
-                month:    'รายเดือน',
-                week:     'รายสัปดาห์',
-                day:      'รายวัน',
+                today: 'วันนี้', month: 'รายเดือน', week: 'สัปดาห์', day: 'วัน',
             },
             slotMinTime:  '08:00:00',
             slotMaxTime:  '20:00:00',
@@ -438,11 +210,36 @@
             nowIndicator: true,
             selectable:   true,
             selectMirror: true,
+            selectAllow: function (selectInfo) {
+                const startDate = selectInfo.start.toDateString();
+                const endDate = new Date(selectInfo.end.valueOf() - 1).toDateString();
+                return startDate === endDate; 
+            },
             displayEventTime: true,
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
             events: '/api/bookings/',
 
-            /* Color events by status */
+            /* Responsive: switch view on resize */
+            windowResize: function () {
+                var target = isMobile() ? 'timeGridDay' : 'timeGridWeek';
+                if (calendar.view.type !== target) {
+                    calendar.changeView(target);
+                    calendar.setOption('headerToolbar', isMobile()
+                        ? { left: 'prev,next', center: 'title', right: 'today' }
+                        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }
+                    );
+                }
+            },
+
+            /* Today column yellow */
+            datesSet: function () {
+                requestAnimationFrame(function () {
+                    document.querySelectorAll('.fc-timegrid-col.fc-day-today').forEach(function (col) {
+                        col.style.setProperty('background-color', '#fff8e1', 'important');
+                    });
+                });
+            },
+
             eventDidMount: function (info) {
                 var status = info.event.extendedProps.status;
                 if (status === 'Approved') {
@@ -493,6 +290,23 @@
         });
     });
 </script>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
 
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
 </body>
 </html>

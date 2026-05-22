@@ -6,16 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard | ระบบจองห้อง ECE</title>
     <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
-    <style>
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--color-border); font-size: var(--font-size-sm); }
-        th { background: var(--gray-50); color: var(--gray-600); font-weight: var(--font-weight-semi); }
-        tr:hover td { background: var(--gray-50); }
-    </style>
 </head>
 <body>
 
 <input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
 
 <div class="app-shell">
 
@@ -53,6 +48,11 @@
                 <span>&#128202;</span>
                 <span>รายงาน</span>
             </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
         </nav>
 
         <div class="sidebar__footer">
@@ -69,26 +69,54 @@
 
     <!-- Main content -->
     <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">แดชบอร์ดแอดมิน</span>
+        </div>
         <div class="page-content">
 
             <div class="page-header">
                 <div>
-                    <div class="page-header__title">รายการจองที่รอการอนุมัติ</div>
+                    <div class="page-header__title">แดชบอร์ดผู้ดูแลระบบ</div>
                     <div class="page-header__subtitle">สวัสดีครับ คุณแอดมิน {{ user.first_name }}</div>
                 </div>
             </div>
 
+            <!-- Stat cards -->
+            <div class="admin-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card__number" style="color: var(--status-pending);">{{ pending_count }}</div>
+                    <div class="stat-card__label">รอการอนุมัติ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__number" style="color: var(--status-approved);">{{ approved_today }}</div>
+                    <div class="stat-card__label">อนุมัติวันนี้</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__number">{{ total_today }}</div>
+                    <div class="stat-card__label">การจองวันนี้ทั้งหมด</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__number" style="color: #2980b9;">{{ total_rooms }}</div>
+                    <div class="stat-card__label">ห้องที่เปิดใช้งาน</div>
+                </div>
+            </div>
+
+            <!-- Section header -->
+            <div class="section-heading">รายการจองที่รอการอนุมัติ</div>
+
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert--success">
-                        <span>&#10003;</span>
+                    <div class="alert {% if message.tags == 'error' %}alert--error{% else %}alert--success{% endif %}">
+                        <span>{% if message.tags == 'error' %}&#10007;{% else %}&#10003;{% endif %}</span>
                         <span>{{ message }}</span>
                     </div>
                 {% endfor %}
             {% endif %}
 
             <div class="card card--compact">
-                <table>
+                <div class="table-responsive">
+                <table class="data-table">
                     <thead>
                         <tr>
                             <th>ผู้ขอจอง</th>
@@ -122,25 +150,48 @@
                             </td>
                             <td><span class="badge badge--pending">รออนุมัติ</span></td>
                             <td>
-                                <a href="{% url 'approve_booking' booking.id %}" class="btn btn--success btn--sm" onclick="return confirm('ยืนยันการอนุมัติห้องนี้?');">อนุมัติ</a>
-                                <a href="{% url 'reject_booking' booking.id %}" class="btn btn--danger btn--sm" onclick="return confirm('ยืนยันการปฏิเสธคำขอนี้?');">ปฏิเสธ</a>
+                                <div style="display: flex; flex-wrap: wrap; gap: var(--space-2);">
+                                    <a href="{% url 'approve_booking' booking.id %}" class="btn btn--success btn--sm" onclick="return confirm('ยืนยันการอนุมัติห้องนี้?');">อนุมัติ</a>
+                                    <a href="{% url 'reject_booking' booking.id %}" class="btn btn--danger btn--sm" onclick="return confirm('ยืนยันการปฏิเสธคำขอนี้?');">ปฏิเสธ</a>
+                                </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 50px; color: var(--gray-400);">
-                                &#127881; ไม่มีรายการจองค้างในระบบในขณะนี้
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <img src="{% static 'images/mascots.png' %}" alt="" class="empty-state__mascot">
+                                    <div class="empty-state__text">ไม่มีรายการจองค้างในระบบในขณะนี้</div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
 
         </div>
     </div>
 
 </div>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
 
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
 </body>
 </html>

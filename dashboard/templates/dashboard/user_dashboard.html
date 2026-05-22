@@ -6,117 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>แดชบอร์ด | ระบบจองห้อง ECE</title>
     <link rel="stylesheet" href="{% static 'bookings/css/main.css' %}">
-    <style>
-        /* Quick action cards */
-        .quick-action-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
-        }
-        .qa-card {
-            display: grid;
-            grid-template-rows: auto auto auto;
-            justify-items: center;
-            text-align: center;
-            gap: var(--space-3);
-            padding: var(--space-6);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--color-border);
-            box-shadow: var(--shadow-sm);
-            text-decoration: none;
-            transition: box-shadow var(--transition-fast), transform var(--transition-fast);
-            background-color: var(--color-bg-card);
-            color: var(--color-text-body);
-        }
-        .qa-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-        .qa-card--primary {
-            background-color: var(--color-bg-sidebar);
-            border-color: var(--color-bg-sidebar);
-            color: #fff;
-        }
-        .qa-card--primary:hover { color: #fff; }
-        .qa-card__icon {
-            font-size: 2.5rem;
-            line-height: 1;
-        }
-        .qa-card__title {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-bold);
-            line-height: var(--line-height-tight);
-        }
-        .qa-card__sub {
-            font-size: var(--font-size-sm);
-            opacity: .7;
-        }
-
-        /* Stat cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-        }
-        .stat-card {
-            background-color: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-xl);
-            padding: var(--space-5) var(--space-6);
-            box-shadow: var(--shadow-sm);
-            text-align: center;
-        }
-        .stat-card__number {
-            font-size: 2.375rem;
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-heading);
-            line-height: 1;
-            margin-bottom: var(--space-2);
-        }
-        .stat-card__label {
-            font-size: var(--font-size-base);
-            color: var(--color-text-muted);
-        }
-
-        /* Upcoming list */
-        .upcoming-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .upcoming-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background-color: var(--color-bg-card);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-sm);
-        }
-        .upcoming-item__room {
-            font-size: var(--font-size-lg);
-            font-weight: var(--font-weight-bold);
-            color: var(--color-text-heading);
-            margin-bottom: var(--space-1);
-        }
-        .upcoming-item__meta {
-            font-size: var(--font-size-sm);
-            color: var(--color-text-muted);
-        }
-
-        @media (max-width: 767px) {
-            .quick-action-grid,
-            .stats-grid { grid-template-columns: 1fr; }
-        }
-    </style>
 </head>
 <body>
 
 <input type="checkbox" id="sidebar-toggle" class="sr-only">
+<label for="sidebar-toggle" class="sidebar-overlay"></label>
 
 <div class="app-shell">
 
@@ -144,6 +38,11 @@
                 <span>&#128340;</span>
                 <span>ปฏิทินห้องว่าง</span>
             </a>
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
         </nav>
 
         <div class="sidebar__footer">
@@ -160,6 +59,10 @@
 
     <!-- Main content -->
     <div class="main-panel">
+        <div class="topbar">
+            <label for="sidebar-toggle" class="topbar__hamburger">&#9776;</label>
+            <span class="topbar__page-title">แดชบอร์ด</span>
+        </div>
         <div class="page-content">
 
             <!-- Page header -->
@@ -216,9 +119,7 @@
 
             <!-- Upcoming bookings -->
             <div id="upcoming">
-                <div style="font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); color: var(--color-text-heading); margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 2px solid var(--color-border);">
-                    การจองที่กำลังจะมาถึง
-                </div>
+                <div class="section-heading">การจองที่กำลังจะมาถึง</div>
                 <div class="upcoming-list">
                     {% for booking in upcoming %}
                     <div class="upcoming-item">
@@ -239,7 +140,7 @@
                     </div>
                     {% empty %}
                     <div class="empty-state">
-                        <div class="empty-state__icon">&#128197;</div>
+                        <img src="{% static 'images/mascots.png' %}" alt="" class="empty-state__mascot">
                         <div class="empty-state__text">ไม่มีการจองที่กำลังจะมาถึง</div>
                         <a href="{% url 'book_room' %}" class="btn btn--primary">&#43; จองห้องใหม่</a>
                     </div>
@@ -251,6 +152,23 @@
     </div>
 
 </div>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และใช้งานผ่านไลน์
+        </p>
 
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
 </body>
 </html>

@@ -36,9 +36,22 @@ def tu_login_view(request):
         ).strip() or None
 
         try:
-            response = requests.post(url, json=data, headers=headers)
-            result = response.json()
+            response = requests.post(url, json=data, headers=headers, timeout=10)
+        except requests.exceptions.Timeout:
+            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ (หมดเวลา) กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
+        except requests.exceptions.ConnectionError:
+            messages.error(request, "ไม่สามารถเชื่อมต่อระบบยืนยันตัวตนได้ กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
 
+        try:
+            result = response.json()
+        except ValueError:
+            print(f"TU API returned non-JSON response: {response.status_code} {response.text[:200]}")
+            messages.error(request, "ระบบยืนยันตัวตนตอบสนองผิดปกติ กรุณาลองใหม่อีกครั้ง")
+            return render(request, "bookings/login.html")
+
+        try:
             if response.status_code == 200 and result.get("status") == True:
                 api_username = result.get("username")
                 display_name = result.get("displayname_th", "")
@@ -73,13 +86,7 @@ def tu_login_view(request):
                     request, user, backend="django.contrib.auth.backends.ModelBackend"
                 )
 
-                # LIFF flow: close the in-app browser and return to LINE chat
-                if line_user_id:
-                    return render(request, "bookings/liff_success.html", {
-                        "liff_id": settings.LIFF_ID,
-                        "display_name": user.first_name or user.username,
-                    })
-                return redirect("book_room")
+                return redirect("dashboard")
             else:
                 messages.error(request, "ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง")
 
@@ -122,6 +129,18 @@ def create_booking_view(request):
             base_start_dt = parse_datetime(hidden_start)
             base_end_dt = parse_datetime(hidden_end)
 
+            if base_start_dt is None or base_end_dt is None:
+                messages.error(
+                    request, "รูปแบบวันที่/เวลาไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง"
+                )
+                return redirect("book_room")
+
+            if timezone.is_naive(base_start_dt):
+                base_start_dt = timezone.make_aware(base_start_dt)
+            if timezone.is_naive(base_end_dt):
+                base_end_dt = timezone.make_aware(base_end_dt)
+
+            now = timezone.now()
             created_bookings = []  # เก็บลิสต์การจองที่สร้างสำเร็จเพื่อเอาไปส่งอีเมล
             conflict_count = 0
 
@@ -129,6 +148,21 @@ def create_booking_view(request):
             # กรณี 1: จองแบบครั้งเดียว (Single Booking)
             # ---------------------------------------------------------
             if booking_type == "single":
+                # เช็คว่าเวลาที่จองผ่านมาแล้วหรือเปล่า
+                if base_start_dt <= now:
+                    messages.error(
+                        request,
+                        "ไม่สามารถจองเวลาที่ผ่านมาแล้วได้",
+                    )
+                    return render(
+                        request,
+                        "bookings/booking_form.html",
+                        {
+                            "rooms": rooms,
+                            "form_data": request.POST,
+                        },
+                    )
+
                 # เช็คคิวชน
                 conflict = Booking.objects.filter(
                     room=room,
@@ -191,6 +225,12 @@ def create_booking_view(request):
                         target_end = timezone.make_aware(
                             datetime.combine(current_date, base_end_dt.time())
                         )
+
+                        # ข้ามวัน/เวลาที่ผ่านมาแล้ว
+                        if target_start <= now:
+                            conflict_count += 1
+                            current_date += timedelta(days=1)
+                            continue
 
                         conflict = Booking.objects.filter(
                             room=room,
