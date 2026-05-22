@@ -21,12 +21,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-(6=zn=93$^a4@k_5et5!%t&4z)($tdc32!ub62ozq9&+$=tfbh"
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-(6=zn=93$^a4@k_5et5!%t&4z)($tdc32!ub62ozq9&+$=tfbh")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
 
 
 # Application definition
@@ -35,6 +36,7 @@ INSTALLED_APPS = [
     "dashboard",
     "bookings",
     "reports",
+    "chatbot",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -131,6 +133,13 @@ STATIC_URL = "/static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "bookings.User"
 TU_API_KEY = os.environ.get("TU_API_KEY", "")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+
+# LINE Messaging API
+LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET", "")
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN", "")
+LIFF_LOGIN_URL = os.environ.get("LIFF_LOGIN_URL", "https://liff.line.me/YOUR_LIFF_ID")
+LIFF_ID = os.environ.get("LIFF_ID", "")
 
 # Email Settings
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

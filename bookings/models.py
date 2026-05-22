@@ -11,6 +11,9 @@ class User(AbstractUser):
         ("Admin", "เจ้าหน้าที่/แอดมิน"),
     ]
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="Lecturer")
+    line_user_id = models.CharField(
+        max_length=50, unique=True, null=True, blank=True
+    )
 
     def __str__(self):
         return f"{self.username} ({self.role})"

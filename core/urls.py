@@ -6,4 +6,5 @@ urlpatterns = [
     path("", include("bookings.urls")),
     path("dashboard/", include("dashboard.urls")),
     path("reports/", include("reports.urls")),
+    path("chatbot/", include("chatbot.urls")),
 ]
