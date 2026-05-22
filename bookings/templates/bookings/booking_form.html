@@ -457,6 +457,13 @@
     function renderSlots(bookedSlots) {
         const container = document.getElementById('time-slots-container');
         container.innerHTML = '';
+
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const dateVal  = document.getElementById('booking_date').value;
+        const isToday  = (dateVal === todayStr);
+        const currentHour = now.getHours();
+
         allSlots.forEach(time => {
             const h       = parseInt(time.split(':')[0]);
             const nextTime = `${(h + 1).toString().padStart(2, '0')}:00`;
@@ -465,9 +472,14 @@
             btn.dataset.start = time;
             btn.dataset.end   = nextTime;
             btn.innerText     = `${time} – ${nextTime}`;
+
             const isBooked = bookedSlots.some(b => time >= b.start && time < b.end);
-            if (isBooked) {
+            // ถ้าเป็นวันนี้ และ slot นี้เริ่มก่อนหรือเท่ากับชั่วโมงปัจจุบัน ให้ disable
+            const isPast   = isToday && h <= currentHour;
+
+            if (isBooked || isPast) {
                 btn.classList.add('disabled');
+                if (isPast && !isBooked) btn.title = 'เวลาผ่านมาแล้ว';
             } else {
                 btn.onclick = () => toggleSlot(btn);
             }
