@@ -360,6 +360,38 @@ def my_bookings_service(user: User) -> str:
     return "\n\n".join(lines)
 
 
+# ── Follow event handler ──────────────────────────────────────────────────────
+
+def _handle_follow_event(event: dict) -> None:
+    """Send a welcome + login button when a user adds the bot as a friend."""
+    reply_token  = event.get("replyToken", "")
+    line_user_id = event.get("source", {}).get("userId", "")
+
+    if not reply_token or not line_user_id:
+        return
+
+    try:
+        user = User.objects.get(line_user_id=line_user_id)
+        _reply(
+            reply_token,
+            f"ยินดีต้อนรับกลับค่ะ อาจารย์ {user.first_name or user.username} 😊\n\n"
+            "สามารถใช้งานได้เลยค่ะ เช่น\n"
+            "• \"จองห้อง\"\n"
+            "• \"ห้องไหนว่างพรุ่งนี้\"\n"
+            "• \"ดูการจองของฉัน\"",
+        )
+    except User.DoesNotExist:
+        _reply_link_button(
+            reply_token,
+            body_text=(
+                "ยินดีต้อนรับสู่ระบบจองห้อง ECE ค่ะ! 🏫\n"
+                "กรุณาเชื่อมบัญชี TU Account เพื่อเริ่มใช้งาน"
+            ),
+            button_label="เชื่อมบัญชีที่นี่",
+            url=_LIFF_LOGIN_URL,
+        )
+
+
 # ── Event handler (pure logic, no HTTP concerns) ──────────────────────────────
 
 def _handle_message_event(event: dict) -> None:
@@ -490,11 +522,16 @@ def line_webhook(request):
         return HttpResponse("Bad Request", status=400)
 
     for event in payload.get("events", []):
+        handler = None
         if event.get("type") == "message" and event.get("message", {}).get("type") == "text":
+            handler = _handle_message_event
+        elif event.get("type") == "follow":
+            handler = _handle_follow_event
+
+        if handler:
             try:
-                _handle_message_event(event)
+                handler(event)
             except Exception:
-                # Log and continue — never let one bad event crash the whole delivery.
                 logger.exception(
                     "Unhandled error processing LINE event: %s",
                     json.dumps(event)[:200],
