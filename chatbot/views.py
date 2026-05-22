@@ -3,19 +3,22 @@ import hashlib
 import hmac
 import json
 import logging
+from datetime import datetime
 
 import requests as http_client
 from django.conf import settings
 from django.http import HttpResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from bookings.models import User
+from bookings.models import Booking, Room, User
 from .llm_engine import process_booking_intent
 
 logger = logging.getLogger(__name__)
 
 _LINE_REPLY_URL = "https://api.line.me/v2/bot/message/reply"
+_LINE_PUSH_URL  = "https://api.line.me/v2/bot/message/push"
 
 # Replace with your published LIFF URL once you have one.
 _LIFF_LOGIN_URL = settings.LIFF_LOGIN_URL
@@ -53,25 +56,98 @@ def _reply(reply_token: str, text: str) -> None:
         logger.exception("Failed to send LINE reply (token=%.20s…)", reply_token)
 
 
-# ── Booking service stub ──────────────────────────────────────────────────────
+def push_line_message(line_user_id: str, text: str) -> None:
+    """Send a push message to a LINE user (no reply token needed)."""
+    if not line_user_id:
+        return
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {settings.LINE_CHANNEL_ACCESS_TOKEN}",
+    }
+    payload = {
+        "to": line_user_id,
+        "messages": [{"type": "text", "text": text}],
+    }
+    try:
+        resp = http_client.post(
+            _LINE_PUSH_URL, json=payload, headers=headers, timeout=5
+        )
+        resp.raise_for_status()
+    except Exception:
+        logger.exception("Failed to push LINE message to %s", line_user_id)
+
+
+# ── Booking service ───────────────────────────────────────────────────────────
 
 def create_booking_service(user: User, data: dict) -> dict:
     """
-    STUB — wire up real booking logic here (Phase 4).
+    Create a Booking from LLM-extracted data.
 
-    Expected keys in data: room, date (YYYY-MM-DD), start_time (HH:MM),
-    end_time (HH:MM).
+    Expected keys in data:
+        room       – room_id string e.g. "406-3"
+        date       – "YYYY-MM-DD"
+        start_time – "HH:MM"
+        end_time   – "HH:MM"
 
-    Returns {"success": bool, "message": str}.
+    Returns {"success": bool, "message": str, "booking": Booking|None}.
     """
-    logger.info(
-        "create_booking_service called — user=%s, data=%s",
-        user.username,
-        data,
-    )
-    # TODO: combine date + start_time/end_time into aware DateTimeFields,
-    #       resolve room_id, run conflict check, call Booking.objects.create().
-    return {"success": True, "message": "mock booking accepted"}
+    room_id    = (data.get("room") or "").strip()
+    date_str   = (data.get("date") or "").strip()
+    start_str  = (data.get("start_time") or "").strip()
+    end_str    = (data.get("end_time") or "").strip()
+
+    if not all([room_id, date_str, start_str, end_str]):
+        missing = [k for k, v in {"ห้อง": room_id, "วันที่": date_str,
+                                   "เวลาเริ่ม": start_str, "เวลาสิ้นสุด": end_str}.items() if not v]
+        return {"success": False, "message": f"ข้อมูลไม่ครบ: {', '.join(missing)}", "booking": None}
+
+    # ── Resolve room ─────────────────────────────────────────────────────────
+    try:
+        room = Room.objects.get(room_id=room_id, is_active=True)
+    except Room.DoesNotExist:
+        return {"success": False, "message": f"ไม่พบห้อง {room_id} หรือห้องปิดใช้งานอยู่", "booking": None}
+
+    # ── Parse to timezone-aware datetimes ────────────────────────────────────
+    try:
+        start_dt = timezone.make_aware(
+            datetime.strptime(f"{date_str} {start_str}", "%Y-%m-%d %H:%M")
+        )
+        end_dt = timezone.make_aware(
+            datetime.strptime(f"{date_str} {end_str}", "%Y-%m-%d %H:%M")
+        )
+    except ValueError:
+        return {"success": False, "message": "รูปแบบวันที่หรือเวลาไม่ถูกต้อง", "booking": None}
+
+    if start_dt >= end_dt:
+        return {"success": False, "message": "เวลาสิ้นสุดต้องอยู่หลังเวลาเริ่มต้น", "booking": None}
+
+    # ── Conflict check ────────────────────────────────────────────────────────
+    conflict = Booking.objects.filter(
+        room=room,
+        status__in=["Pending", "Approved"],
+        start_time__lt=end_dt,
+        end_time__gt=start_dt,
+    ).exists()
+
+    if conflict:
+        return {"success": False, "message": f"ห้อง {room.name} ถูกจองในช่วงเวลานั้นแล้ว กรุณาเลือกเวลาอื่น", "booking": None}
+
+    # ── Create booking ────────────────────────────────────────────────────────
+    try:
+        booking = Booking.objects.create(
+            user=user,
+            room=room,
+            purpose_type="Training",
+            training_topic="จองผ่าน LINE Bot (Roomasat)",
+            start_time=start_dt,
+            end_time=end_dt,
+            status="Pending",
+        )
+        logger.info("Booking #%s created via LINE bot — user=%s room=%s", booking.id, user.username, room_id)
+        return {"success": True, "message": "จองสำเร็จ", "booking": booking}
+    except Exception:
+        logger.exception("create_booking_service failed — user=%s data=%s", user.username, data)
+        return {"success": False, "message": "เกิดข้อผิดพลาดในการบันทึกการจอง", "booking": None}
 
 
 # ── Event handler (pure logic, no HTTP concerns) ──────────────────────────────
@@ -111,22 +187,22 @@ def _handle_message_event(event: dict) -> None:
     booking_result = create_booking_service(user, extracted)
 
     if booking_result["success"]:
-        room = extracted.get("room") or "-"
-        date = extracted.get("date") or "-"
-        start = extracted.get("start_time") or "-"
-        end = extracted.get("end_time") or "-"
+        bk = booking_result["booking"]
+        from django.utils.timezone import localtime
+        start_fmt = localtime(bk.start_time).strftime("%d/%m/%Y %H:%M")
+        end_fmt   = localtime(bk.end_time).strftime("%H:%M")
         reply_text = (
-            "จองห้องสำเร็จแล้วครับ!\n"
-            f"ห้อง: {room}\n"
-            f"วันที่: {date}\n"
-            f"เวลา: {start} – {end}\n"
-            "สถานะ: รออนุมัติ (ระบบจะแจ้งผลทาง LINE)"
+            f"✅ ส่งคำขอจองห้องสำเร็จแล้วค่ะ!\n"
+            f"ห้อง: {bk.room.room_id} – {bk.room.name}\n"
+            f"วันที่: {start_fmt} – {end_fmt} น.\n"
+            f"สถานะ: รออนุมัติจาก Admin\n"
+            f"(เลขที่คำขอ: #{bk.id})"
         )
     else:
         reply_text = (
-            f"ขออภัยครับ ไม่สามารถจองห้องได้\n"
+            f"❌ ไม่สามารถจองห้องได้ค่ะ\n"
             f"สาเหตุ: {booking_result.get('message', 'เกิดข้อผิดพลาด')}\n"
-            "กรุณาเลือกช่วงเวลาอื่นหรือลองใหม่ครับ"
+            "กรุณาลองใหม่หรือเลือกช่วงเวลาอื่นค่ะ"
         )
 
     _reply(reply_token, reply_text)

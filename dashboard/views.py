@@ -5,6 +5,7 @@ from bookings.models import Booking, User, Room
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
+from chatbot.views import push_line_message
 
 
 @login_required
@@ -49,16 +50,24 @@ def update_status(request, booking_id, new_status):
 
             target_email = booking.user.email
 
+            status_th = "อนุมัติ" if new_status == "Approved" else "ปฏิเสธ"
+            status_icon = "✅" if new_status == "Approved" else "❌"
+            date_fmt = booking.start_time.strftime("%d/%m/%Y")
+            time_fmt = (
+                f"{booking.start_time.strftime('%H:%M')} – "
+                f"{booking.end_time.strftime('%H:%M')} น."
+            )
+            display_name = booking.user.first_name or booking.user.username
+
+            # ── Email notification ────────────────────────────────────────────
             if target_email:
-                status_th = "อนุมัติ" if new_status == "Approved" else "ปฏิเสธ"
                 subject = f"แจ้งผลการจองห้อง {booking.room.room_id}"
                 message = (
-                    f"สวัสดีครับ อาจารย์ {booking.user.first_name or booking.user.username}\n\n"
-                    f'คำขอจองห้อง {booking.room.room_id} ในวันที่ {booking.start_time.strftime("%d/%m/%Y")} '
+                    f"สวัสดีครับ อาจารย์ {display_name}\n\n"
+                    f'คำขอจองห้อง {booking.room.room_id} ในวันที่ {date_fmt} '
                     f'ได้รับการ "{status_th}" เรียบร้อยแล้วครับ\n\n'
                     f"ตรวจสอบรายละเอียดได้ที่หน้า Dashboard ของคุณ"
                 )
-
                 send_mail(
                     subject,
                     message,
@@ -66,6 +75,18 @@ def update_status(request, booking_id, new_status):
                     [target_email],
                     fail_silently=True,
                 )
+
+            # ── LINE push notification ────────────────────────────────────────
+            if booking.user.line_user_id:
+                line_text = (
+                    f"{status_icon} แจ้งผลการจองห้องค่ะ\n"
+                    f"อาจารย์ {display_name}\n\n"
+                    f"ห้อง: {booking.room.room_id} – {booking.room.name}\n"
+                    f"วันที่: {date_fmt}\n"
+                    f"เวลา: {time_fmt}\n"
+                    f"สถานะ: ได้รับการ{status_th}แล้วค่ะ"
+                )
+                push_line_message(booking.user.line_user_id, line_text)
 
             messages.success(request, f"เปลี่ยนสถานะการจองเป็น {new_status} เรียบร้อยแล้ว")
     except Booking.DoesNotExist:
