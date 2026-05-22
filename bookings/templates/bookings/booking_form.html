@@ -50,6 +50,11 @@
                 <span>รายงาน</span>
             </a>
             {% endif %}
+            <div class="sidebar__section-label">ช่วยเหลือ</div>
+            <a href="#" class="sidebar__link" onclick="document.getElementById('linePopup').style.display='flex'; return false;">
+                <span style="color: #00B900;">&#128172;</span>
+                <span>ใช้งานผ่าน LINE</span>
+            </a>
         </nav>
 
         <div class="sidebar__footer">
@@ -529,6 +534,23 @@
         }
     }
 </script>
+<div id="linePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; padding: 20px;" onclick="if(event.target === this) this.style.display='none'">
+    <div style="background: #ffffff; padding: var(--space-5); border-radius: var(--radius-lg); text-align: center; max-width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+        <h3 style="margin-top: 0; margin-bottom: var(--space-2); color: var(--color-text-heading); font-size: var(--font-size-lg);">เพิ่มเพื่อน LINE</h3>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            สแกน QR Code เพื่อเพิ่มเพื่อน<br>และสอบถามปัญหาการใช้งาน
+        </p>
 
+        <div style="background: #f8f9fa; padding: var(--space-3); border-radius: var(--radius-md); display: inline-block; margin: var(--space-3) 0;">
+            <img src="https://qr-official.line.me/gs/M_216tweoe_BW.png?oat_content=qr" alt="LINE Official Account" style="width: 180px; height: 180px; object-fit: contain; display: block;">
+        </div>
+        
+        <p style="color: var(--color-text-muted); font-size: var(--font-size-sm); margin-bottom: var(--space-4); line-height: 1.5;">
+            หรือค้นหา ID: <b style="color: var(--color-text-heading)">@216tweoe</b>
+        </p>
+        <button class="btn btn--primary" style="width: 100%;" onclick="document.getElementById('linePopup').style.display='none'">ปิด</button>
+    </div>
+</div>
 </body>
 </html>
